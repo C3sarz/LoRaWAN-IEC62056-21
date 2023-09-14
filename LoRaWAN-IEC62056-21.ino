@@ -7,11 +7,6 @@ export char meterAddress[] = "76127652";
 
 extern bool send_now;
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
-  setupLoRaWAN();
-
-
   // Initialize Serial for debug output
   time_t timeout = millis();
   Serial.begin(115200);
@@ -22,6 +17,13 @@ void setup() {
       break;
     }
   }
+  initMeterInterface();
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+  // setupLoRaWAN();
+
+
+  Serial.println("Init successful");
 }
 
 void loop() {
@@ -29,15 +31,17 @@ void loop() {
   // true by the application timer and collects and sends the data
   processRS485();
   if (Serial.available() > 0) {
-      int rcvd = Serial.read();
-      if (rcvd == 's') {
-        sendHandshake(meterAddress);
-      } else if (rcvd == 'c') {
-        sendHandshake("0");
-      }
+    int rcvd = Serial.read();
+    Serial.printf("Rcvd: %c\r\n",rcvd);
+    if (rcvd == 's') {
+      sendHandshake(meterAddress);
+    } else if (rcvd == 'c') {
+      sendHandshake("0");
     }
+    
+  }
   if (send_now) {
-    sendHandshake("0");
+    // sendHandshake("0");
     send_now = false;
   }
 }

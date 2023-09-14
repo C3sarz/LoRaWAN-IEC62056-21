@@ -8,6 +8,11 @@ class Packet {
     byte decimalPoints[CODES_LIMIT];
     uint16_t itemPresentMask = 0;
     byte codesCount = 0;
+
+    Packet(void){
+      memset(values,0,CODES_LIMIT*sizeof(values[0]));
+      memset(decimalPoints,0,CODES_LIMIT*sizeof(byte));
+    }
 };
 
 bool parseData(char buffer[], int len, Packet* packetPtr);

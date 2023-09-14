@@ -10,9 +10,9 @@ bool initMeterInterface() {
   pinMode(WB_IO2, OUTPUT);
   digitalWrite(WB_IO2, HIGH);
   RS485.setPins(RS485_TX_PIN, RS485_DE_PIN, RS485_RE_PIN);
+  RS485.setTimeout(RS485_TIMEOUT);
   RS485.begin(ClassCMeterBaudRates[INITIAL_BAUD_INDEX], RS485_SERIAL_CONFIG);
   RS485.receive();
-  RS485.setTimeout(200);
 }
 
 bool changeBaud(char newBaudIndex) {
@@ -31,8 +31,8 @@ bool changeBaud(char newBaudIndex) {
   RS485.noReceive();
   RS485.end();
   RS485.begin(ClassCMeterBaudRates[currentBaudIndex], RS485_SERIAL_CONFIG);
+  RS485.setTimeout(RS485_TIMEOUT);
   RS485.receive();
-  RS485.setTimeout(200);
 }
 
 void sendBaudAck(char baudIndex) {
@@ -86,22 +86,34 @@ void processRS485() {
     unsigned int dataLen = 0;
     if (expectData) {
       Packet packet;
+byte sendBuf[100];
       dataLen = RS485.readBytesUntil('!', dataBuf, sizeof(dataBuf));
       dataBuf[dataLen] = '\0';
-      Serial.printf("RS485 DATA:\r\n%s\r\n", dataBuf);
+      for(int i = 0; i < dataLen; i++){
+        Serial.printf("%c",dataBuf[i]);
+      }
+      Serial.printf("Bytes read: %u\r\n", dataLen);
       parseData(dataBuf, sizeof(dataBuf), &packet);
+      int res = assemblePacket(sendBuf,100, packet);
+      if(res > 0){
+        Serial.printf("Packet size: %u\r\n",res);
+        for(int i =0; i < res;i++){
+          Serial.printf("0x%02hhx ",sendBuf[i]);
+        }
+      }
       expectData = false;
       changeBaud(0);
-      RS485.flush();
     } else {
       dataLen = RS485.readBytesUntil('!', dataBuf, sizeof(dataBuf));
       dataBuf[dataLen] = '\0';
-      Serial.printf("RS485 MSG:\r\n%s", dataBuf);
+      for(int i = 0; i < dataLen; i++){
+        Serial.printf("%c",dataBuf[i]);
+      }
       Serial.printf("Bytes read: %u\r\n", dataLen);
       if (processHandshakeResponse()) {
         expectData = true;
       }
-      RS485.flush();
+      // RS485.flush();
     }
   }
 }
