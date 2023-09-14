@@ -31,6 +31,10 @@ export const char* codes[CODES_LIMIT + 1] = {
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   int packetLen = 0;
 
+  if(!(packet.itemPresentMask)){
+    return 0;
+  }
+
   // Add present values indicator to packet.
   // Copy byte for byte reversing endianess.
   for (int i = 0; i < sizeof(packet.itemPresentMask); i++) {

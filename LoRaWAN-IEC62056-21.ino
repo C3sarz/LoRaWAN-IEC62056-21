@@ -20,7 +20,7 @@ void setup() {
   initMeterInterface();
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  // setupLoRaWAN();
+  setupLoRaWAN();
 
 
   Serial.println("Init successful");

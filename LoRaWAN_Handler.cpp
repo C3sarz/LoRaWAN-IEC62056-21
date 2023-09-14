@@ -6,7 +6,7 @@ using namespace std::chrono;
 bool doOTAA = true;                                               // OTAA is used by default.
 #define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE /**< Maximum size of scheduler events. */
 #define SCHED_QUEUE_SIZE 60                                       /**< Maximum number of events in the scheduler queue. */
-#define LORAWAN_DATARATE DR_4                                     /*LoRaMac datarates definition, from DR_0 to DR_5*/
+#define LORAWAN_DATARATE DR_3                                     /*LoRaMac datarates definition, from DR_0 to DR_5*/
 #define LORAWAN_TX_POWER TX_POWER_15                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3                                        /**< Number of trials for the join request. */
 DeviceClass_t g_CurrentClass = CLASS_A;                           /* class definition*/
@@ -131,6 +131,8 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   m_lora_app_data.port = gAppPort;
   memcpy(m_lora_app_data.buffer, sendBuffer, bufferLen);
   m_lora_app_data.buffsize = bufferLen;
+
+
 
   lmh_error_status error = lmh_send(&m_lora_app_data, g_CurrentConfirm);
   Serial.println("sent..");

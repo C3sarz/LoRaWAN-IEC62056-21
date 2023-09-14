@@ -86,21 +86,33 @@ void processRS485() {
     unsigned int dataLen = 0;
     if (expectData) {
       Packet packet;
-byte sendBuf[100];
       dataLen = RS485.readBytesUntil('!', dataBuf, sizeof(dataBuf));
       dataBuf[dataLen] = '\0';
       for(int i = 0; i < dataLen; i++){
         Serial.printf("%c",dataBuf[i]);
       }
       Serial.printf("Bytes read: %u\r\n", dataLen);
-      parseData(dataBuf, sizeof(dataBuf), &packet);
-      int res = assemblePacket(sendBuf,100, packet);
-      if(res > 0){
-        Serial.printf("Packet size: %u\r\n",res);
+      if(parseData(dataBuf, sizeof(dataBuf), &packet)){
+        byte sendBuf[100];
+        int res = assemblePacket(sendBuf,100, packet);
+        if(res && !send_lora_frame(sendBuf,res)){
+          Serial.println("Packet sent successfully!");
+          Serial.printf("Packet size: %u\r\n",res);
         for(int i =0; i < res;i++){
           Serial.printf("0x%02hhx ",sendBuf[i]);
         }
+        }
       }
+
+      // Debug
+      // byte sendBuf[100];
+      // int res = assemblePacket(sendBuf,100, packet);
+      // if(res > 0){
+      //   Serial.printf("Packet size: %u\r\n",res);
+      //   for(int i =0; i < res;i++){
+      //     Serial.printf("0x%02hhx ",sendBuf[i]);
+      //   }
+      // }
       expectData = false;
       changeBaud(0);
     } else {

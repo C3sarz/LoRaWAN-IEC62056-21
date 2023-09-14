@@ -5,6 +5,9 @@
 #include "mbed.h"
 #include "rtos.h"
 
+#ifndef _LORAWAN_HANDLER_
+#define _LORAWAN_HANDLER_
+
 enum LoRaWAN_Send_Status {
   SEND_OK,
   SEND_FAILED,
@@ -26,3 +29,4 @@ void lorawan_unconf_finished(void);
 void lorawan_conf_finished(bool result);
 bool setupLoRaWAN();
 
+#endif
