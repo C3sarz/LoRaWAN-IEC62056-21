@@ -3,20 +3,15 @@
 using namespace std::chrono_literals;
 using namespace std::chrono;
 
-bool doOTAA = true;                                               // OTAA is used by default.
-#define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE /**< Maximum size of scheduler events. */
-#define SCHED_QUEUE_SIZE 60                                       /**< Maximum number of events in the scheduler queue. */
-#define LORAWAN_DATARATE DR_3                                     /*LoRaMac datarates definition, from DR_0 to DR_5*/
-#define LORAWAN_TX_POWER TX_POWER_15                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
-#define JOINREQ_NBTRIALS 3                                        /**< Number of trials for the join request. */
-DeviceClass_t g_CurrentClass = CLASS_A;                           /* class definition*/
-LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915;           /* Region:US915*/
-lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;               /* confirm/unconfirm packet definition*/
-uint8_t gAppPort = 85;                                            /* data port*/
+bool doOTAA = true;                                     /**< Number of trials for the join request. */
+DeviceClass_t g_CurrentClass = CLASS_A;                 /* class definition*/
+LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
+lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;       /* confirm/unconfirm packet definition*/
+uint8_t gAppPort = 85;                                  /* data port*/
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
-static lmh_param_t g_lora_param_init = { LORAWAN_ADR_ON, LORAWAN_DATARATE, LORAWAN_PUBLIC_NETWORK, JOINREQ_NBTRIALS, LORAWAN_TX_POWER, LORAWAN_DUTYCYCLE_OFF };
+static lmh_param_t g_lora_param_init = { LORAWAN_ADR_OFF, LORAWAN_DATARATE, LORAWAN_PUBLIC_NETWORK, JOINREQ_NBTRIALS, LORAWAN_TX_POWER, LORAWAN_DUTYCYCLE_OFF };
 
 
 /**@brief Structure containing LoRaWan callback functions, needed for lmh_init()
@@ -35,21 +30,21 @@ uint32_t nodeDevAddr = 0x260116F8;
 uint8_t nodeNwsKey[16] = { 0x7E, 0xAC, 0xE2, 0x55, 0xB8, 0xA5, 0xE2, 0x69, 0x91, 0x51, 0x96, 0x06, 0x47, 0x56, 0x9D, 0x23 };
 uint8_t nodeAppsKey[16] = { 0xFB, 0xAC, 0xB6, 0x47, 0xF3, 0x58, 0x45, 0xC7, 0x50, 0x7D, 0xBF, 0x16, 0x8B, 0xA8, 0xC1, 0x7C };
 
-export static uint8_t m_lora_app_data_buffer[LORAWAN_APP_DATA_BUFF_SIZE];        //< Lora user application data buffer.
+static uint8_t m_lora_app_data_buffer[LORAWAN_APP_DATA_BUFF_SIZE];               //< Lora user application data buffer.
 static lmh_app_data_t m_lora_app_data = { m_lora_app_data_buffer, 0, 0, 0, 0 };  //< Lora user application data structure.
 
-mbed::Ticker appTimer;
-void tx_lora_periodic_handler(void);
+// mbed::Ticker appTimer;
+// void tx_lora_periodic_handler(void);
 
 static uint32_t count = 0;
 static uint32_t count_fail = 0;
 
-export volatile bool send_now = false;
 
+// LoRaWAN Hardware and Software setup
 bool setupLoRaWAN() {
-  // Initialize LoRa chip.
+
+  // Simple RAK11300 Setup
   lora_rak11300_init();
-  lmh_setSubBandChannels(1);
   lmh_setDevEui(nodeDeviceEUI);
   lmh_setAppEui(nodeAppEUI);
   lmh_setAppKey(nodeAppKey);
@@ -59,6 +54,14 @@ bool setupLoRaWAN() {
   if (err_code != 0) {
     Serial.printf("lmh_init failed - %d\n", err_code);
     return false;
+  }
+
+  if (!lmh_setSubBandChannels(CHANNEL_MASK)) {
+    Serial.println("Failed to set sub band.");
+    return false;
+  }
+  else{
+    Serial.printf("Set LoRaWAN Channel mask to %d\r\n",CHANNEL_MASK);
   }
 
   // Start Join procedure
@@ -78,17 +81,18 @@ void lorawan_has_joined_handler(void) {
   if (ret == LMH_SUCCESS) {
     delay(1000);
     // Start the application timer. Time has to be in microseconds
-    appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
+    // appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
   } else {
     Serial.println("Error while setting up periodic timer.");
   }
 }
 /**@brief LoRa function for handling OTAA join failed
 */
-static void lorawan_join_failed_handler(void) {
+void lorawan_join_failed_handler(void) {
   Serial.println("OTAA join failed!");
   Serial.println("Check your EUI's and Keys's!");
   Serial.println("Check if a Gateway is in range!");
+  lmh_join();
 }
 /**@brief Function for handling LoRaWan received data from Gateway
 
@@ -115,6 +119,8 @@ void lorawan_conf_finished(bool result) {
   Serial.printf("Confirmed TX %s\n", result ? "success" : "failed");
 }
 
+// =====================================================================
+/* Send LoRaWAN payload */
 LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   Serial.println("Check join..");
   if (lmh_join_status_get() != LMH_SET) {
@@ -127,30 +133,27 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   if (bufferLen > LORAWAN_APP_DATA_BUFF_SIZE) {
     return INVALID_DATA_LENGTH;
   }
-  memset(m_lora_app_data.buffer, 0, LORAWAN_APP_DATA_BUFF_SIZE);
   m_lora_app_data.port = gAppPort;
   memcpy(m_lora_app_data.buffer, sendBuffer, bufferLen);
   m_lora_app_data.buffsize = bufferLen;
-
-
+  Serial.printf("Data copied to LoRa buffer, s:%u\r\n", bufferLen);
 
   lmh_error_status error = lmh_send(&m_lora_app_data, g_CurrentConfirm);
   Serial.println("sent..");
   if (error == LMH_SUCCESS) {
     count++;
-    Serial.printf("lmh_send ok count %d\n", count);
+    Serial.printf("lmh_send enqueued count %d\n", count);
     return SEND_OK;
   } else {
     count_fail++;
-    Serial.printf("lmh_send fail count %d\n", count_fail);
+    Serial.printf("lmh_send fail, R:%d, count %d\n", error, count_fail);
     return SEND_FAILED;
   }
 }
 
 /**@brief Function for handling user timerout event.
 */
-void tx_lora_periodic_handler(void) {
-  appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
-  // This is a timer interrupt, do not do lengthy things here. Signal the loop() instead
-  send_now = true;
-}
+// void tx_lora_periodic_handler(void) {
+//   appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
+//   send_now = true;
+// }

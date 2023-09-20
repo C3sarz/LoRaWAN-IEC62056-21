@@ -1,32 +1,31 @@
 #include "IEC62056-21_Parser.h"
 
-export const char* codes[CODES_LIMIT + 1] = {
-  "32.7.0",
-  "52.7.0",
-  "72.7.0",
-  "0.9.2*255",
-  "15.8.0*02",
-  NULL
-};
-
-// export const char* codes[] = {
+// export const char* codes[CODES_LIMIT + 1] = {
 //   "32.7.0",
 //   "52.7.0",
 //   "72.7.0",
-//   "1.7.0",
-//   "15.8.0",
-//   "128.8.10",
-//   "128.8.20",
-//   "128.8.30",
-//   "128.8.12",
-//   "128.8.22",
-//   "128.8.32",
-//   "13.5.0",
-//   "15.4.0",
-//   "15.6.0",
+//   "0.9.2*255",
 //   "15.8.0*02",
 //   NULL
 // };
+
+export const char* codes[] = {
+  "128.8.10",
+  "128.8.20",
+  "128.8.30",
+  "128.8.12",
+  "128.8.22",
+  "128.8.32",
+  "32.7.0",
+  "52.7.0",
+  "72.7.0",
+  "15.7.0",
+  "15.4.0",
+  "15.8.0",
+  "15.6.0",
+  "13.5.0",
+  NULL
+};
 
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   int packetLen = 0;
@@ -127,9 +126,8 @@ bool parseData(char buffer[], int len, Packet* packetPtr) {
   // DEBUG
   Serial.printf("Finished parsing %u lines.\r\n", count);
   for (int i = 0; i < CODES_LIMIT; i++) {
-    Serial.printf("CODE #%d: %d, Decimals: %u\r\n", i + 1, packetPtr->values[i], packetPtr->decimalPoints[i]);
+    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i+1, packetPtr->values[i], packetPtr->decimalPoints[i]);
   }
-  Serial.printf("CODE Mask: %x\r\n", packetPtr->itemPresentMask);
 
 
   // No codes found
