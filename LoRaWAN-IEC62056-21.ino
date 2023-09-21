@@ -4,7 +4,8 @@
 #define REQUEST_PERIOD (1000 * 60) * 1
 
 // Parameters
-const char meterAddress[] = "86903638";
+const char deviceAddress[] = "86903638";
+// const char meterAddress[] = "0";
 unsigned long lastRequest = millis();
 unsigned long requestPeriod = REQUEST_PERIOD;
 
@@ -25,7 +26,9 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
   setupLoRaWAN();
-  Serial.println("Init successful");
+  Serial.println("\r\n==========================\r\nInit successful");
+  Serial.printf("Device address: %s\r\n", deviceAddress);
+  Serial.printf("RS485 Initial Baud Index: %d, Codes: %u\r\n", INITIAL_BAUD_INDEX, countCodes());
 }
 
 void loop() {
@@ -34,7 +37,7 @@ void loop() {
     int rcvd = Serial.read();
     Serial.printf("Rcvd: %c\r\n", rcvd);
     if (rcvd == 's') {
-      sendHandshake(meterAddress);
+      sendHandshake(deviceAddress);
     } else if (rcvd == 'c') {
       sendHandshake(NOADDRESS);
     } else if (rcvd == 't') {
@@ -45,7 +48,7 @@ void loop() {
   // Status request
   else if ((millis() - lastRequest) > requestPeriod) {
     if (lmh_join_status_get() == LMH_SET) {
-      sendHandshake(meterAddress);
+      sendHandshake(deviceAddress);
     } else {
       lmh_join();
     }

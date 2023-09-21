@@ -21,3 +21,4 @@ bool isQueriedCode(char* code, int* codeIndex);
 void saveNumericalValue(char* valueStr, int position, Packet* packetPtr);
 uint32_t getDecimalCountMask(byte decimals[]);
 uint16_t getPositionMask(uint16_t position);
+unsigned int countCodes();

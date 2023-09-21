@@ -78,7 +78,7 @@ bool isHandshakeResponse() {
   }
 
   if (baudFound) {
-    Serial.printf("Found baud index %c in reply.\r\n", result);
+    Serial.printf("Found baud index %d in reply.\r\n", result);
   }
 
   // ACK baud rate and change it
@@ -132,7 +132,9 @@ void processRS485() {
         Serial.println("Error parsing the data recieved.");
       }
       RS485.flush();
-      changeBaud(INITIAL_BAUD_INDEX);
+      if(changeBaud(INITIAL_BAUD_INDEX)){
+        Serial.printf("Reset baud to %d.\r\n",ClassCMeterBaudRates[INITIAL_BAUD_INDEX]);
+      }
       expectData = false;
     }
 

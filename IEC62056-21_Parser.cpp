@@ -1,6 +1,7 @@
+#include <sys/_types.h>
 #include "IEC62056-21_Parser.h"
 
-// export const char* codes[CODES_LIMIT + 1] = {
+// const char* codes[CODES_LIMIT + 1] = {
 //   "32.7.0",
 //   "52.7.0",
 //   "72.7.0",
@@ -9,7 +10,7 @@
 //   NULL
 // };
 
-export const char* codes[] = {
+const char* codes[] = {
   "128.8.10",
   "128.8.20",
   "128.8.30",
@@ -27,6 +28,16 @@ export const char* codes[] = {
   NULL
 };
 
+// Get amout of codes
+unsigned int countCodes(){
+  unsigned int codesCount = 0;
+    // Count codes until NULL value
+  for(int i = 0; i < CODES_LIMIT && codes[i] != NULL; i++){
+    codesCount++;
+  }
+  return codesCount;
+}
+
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   int packetLen = 0;
 
@@ -36,14 +47,14 @@ byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
 
   // Add present values indicator to packet.
   // Copy byte for byte reversing endianess.
-  for (int i = 0; i < sizeof(packet.itemPresentMask); i++) {
+  for (unsigned int i = 0; i < sizeof(packet.itemPresentMask); i++) {
     resultBuffer[packetLen++] = (packet.itemPresentMask >> 8 * (sizeof(packet.itemPresentMask) - 1 - i)) & 0xFF;
   }
 
   // Add decimals count mask.
   uint32_t decimals = getDecimalCountMask(packet.decimalPoints);
   // Copy byte for byte reversing endianess.
-  for (int i = 0; i < sizeof(decimals); i++) {
+  for (unsigned int i = 0; i < sizeof(decimals); i++) {
     resultBuffer[packetLen++] = (decimals >> 8 * (sizeof(decimals) - 1 - i)) & 0xFF;
   }
 
@@ -52,7 +63,7 @@ byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   for (int item = 0; item < CODES_LIMIT; item++) {
     if (presentValues & 0x01) {
       // Copy byte for byte reversing endianess.
-      for (int i = 0; i < sizeof(packet.values[0]); i++) {
+      for (unsigned int i = 0; i < sizeof(packet.values[0]); i++) {
         resultBuffer[packetLen++] = (packet.values[item] >> 8 * (sizeof(packet.values[0]) - 1 - i)) & 0xFF;
       }
     }
@@ -162,7 +173,7 @@ uint32_t getDecimalCountMask(byte decimals[]) {
 void saveNumericalValue(char* valueStr, int position, Packet* packetPtr) {
   char* decimalCharPtr = strchr(valueStr, '.');
   if (decimalCharPtr != NULL) {
-    for (int i = 0; i < strlen(decimalCharPtr); i++) {
+    for (unsigned int i = 0; i < strlen(decimalCharPtr); i++) {
       decimalCharPtr[i] = decimalCharPtr[i + 1];
     }
     packetPtr->decimalPoints[position] = strlen(decimalCharPtr);

@@ -10,10 +10,10 @@
 
 #define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE /**< Maximum size of scheduler events. */
 #define SCHED_QUEUE_SIZE 60                                       /**< Maximum number of events in the scheduler queue. */
-#define LORAWAN_DATARATE DR_3                                   /*LoRaMac datarates definition, from DR_0 to DR_5*/
+#define LORAWAN_DATARATE DR_3                                  /*LoRaMac datarates definition, from DR_0 to DR_5*/
 #define LORAWAN_TX_POWER TX_POWER_15                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3 
-#define CHANNEL_MASK 2
+#define CHANNEL_MASK 2  /* Channels 8-15, (Milesight default) */
 
 enum LoRaWAN_Send_Status {
   SEND_OK,
