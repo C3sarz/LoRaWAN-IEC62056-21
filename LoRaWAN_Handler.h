@@ -13,6 +13,7 @@
 #define LORAWAN_DATARATE DR_3                                  /*LoRaMac datarates definition, from DR_0 to DR_5*/
 #define LORAWAN_TX_POWER TX_POWER_15                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3 
+#define ADR_MODE LORAWAN_ADR_OFF
 #define CHANNEL_MASK 2  /* Channels 8-15, (Milesight default) */
 
 enum LoRaWAN_Send_Status {

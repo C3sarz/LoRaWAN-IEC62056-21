@@ -11,7 +11,7 @@ uint8_t gAppPort = 85;                                  /* data port*/
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
-static lmh_param_t g_lora_param_init = { LORAWAN_ADR_OFF, LORAWAN_DATARATE, LORAWAN_PUBLIC_NETWORK, JOINREQ_NBTRIALS, LORAWAN_TX_POWER, LORAWAN_DUTYCYCLE_OFF };
+static lmh_param_t g_lora_param_init = { ADR_MODE, LORAWAN_DATARATE, LORAWAN_PUBLIC_NETWORK, JOINREQ_NBTRIALS, LORAWAN_TX_POWER, LORAWAN_DUTYCYCLE_OFF };
 
 
 /**@brief Structure containing LoRaWan callback functions, needed for lmh_init()
