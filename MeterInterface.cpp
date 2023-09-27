@@ -4,7 +4,6 @@ char dataBuf[TRANSMISSION_BUFFER_SIZE];
 const char requestStart[] = "/?";
 const char requestEnd[] = "!\r\n";
 bool expectData = false;
-char currentBaudIndex = INITIAL_BAUD_INDEX;
 
 void initMeterInterface() {
   pinMode(WB_IO2, OUTPUT);

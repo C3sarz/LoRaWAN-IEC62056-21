@@ -1,6 +1,9 @@
-#include <Arduino.h>
+#ifndef _PARSER_
+#define _PARSER_
+
+#include "Storage.h"
 #include <string.h>
-#define CODES_LIMIT 16
+#include <Arduino.h>
 
 class Packet {
   public:
@@ -15,6 +18,8 @@ class Packet {
     }
 };
 
+extern FixedSizeString codes[CODES_LIMIT + 1];
+
 bool parseData(char buffer[], int len, Packet* packetPtr);
 byte assemblePacket(byte * resultBuffer, int maxLen, Packet packet);
 bool isQueriedCode(char* code, int* codeIndex);
@@ -22,3 +27,5 @@ void saveNumericalValue(char* valueStr, int position, Packet* packetPtr);
 uint32_t getDecimalCountMask(byte decimals[]);
 uint16_t getPositionMask(uint16_t position);
 unsigned int countCodes();
+
+#endif

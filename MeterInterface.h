@@ -1,3 +1,7 @@
+#ifndef _METER_HANDLER_
+#define _METER_HANDLER_
+
+#include "Storage.h"
 #include "IEC62056-21_Parser.h"
 #include <ArduinoRS485.h> //Click here to get the library: http://librarymanager/All#ArduinoRS485
 #include "LoRaWAN_Handler.h"
@@ -7,7 +11,6 @@
 #define RS485_DE_PIN 6
 #define RS485_RE_PIN 1
 
-#define INITIAL_BAUD_INDEX 5
 #define NEGOTIATE_BAUD 1
 #define RS485_SERIAL_CONFIG SERIAL_7E1
 #define RS485_TIMEOUT 200
@@ -32,3 +35,5 @@ bool changeBaud(int newBaudIndex);
 void sendBaudAck(int baudIndex);
 void sendHandshake(const char address[]);
 bool isHandshakeResponse();
+
+#endif

@@ -1,13 +1,20 @@
-#include "LoRaWAN_Handler.h"
-#include "MeterInterface.h"
 
-#define REQUEST_PERIOD (1000 * 60) * 1
+// #include <Arduino.h>
+// #include "Storage.h"
+#include "MeterInterface.h"
+#include "LoRaWAN_Handler.h"
+
+
 
 // Parameters
-const char deviceAddress[] = "86903638";
-// const char meterAddress[] = "0";
+extern char deviceAddress[];
+extern byte periodMinutes;
+unsigned long requestPeriod = (1000 * 60) * 1;
 unsigned long lastRequest = millis();
-unsigned long requestPeriod = REQUEST_PERIOD;
+
+void setReportingPeriod(byte minutes) {
+  requestPeriod = (1000 * 60) * periodMinutes;
+}
 
 void setup() {
   // Initialize Serial for debug output
@@ -19,6 +26,13 @@ void setup() {
     } else {
       break;
     }
+  }
+
+  // Read config and codes
+  if (!readFromStorage()) {
+    Serial.println("Failed to read data config from EEPROM!");
+    while (1)
+      ;
   }
 
   // Start RS485 and LoRa interfaces

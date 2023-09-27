@@ -76,7 +76,6 @@ void lorawan_has_joined_handler(void) {
 
   Serial.println("OTAA Mode, Network Joined!");
 
-
   lmh_error_status ret = lmh_class_request(g_CurrentClass);
   if (ret == LMH_SUCCESS) {
     delay(1000);
@@ -101,6 +100,12 @@ void lorawan_join_failed_handler(void) {
 void lorawan_rx_handler(lmh_app_data_t* app_data) {
   Serial.printf("Downlink received on port %d, size:%d, rssi:%d, snr:%d, data:%s\n",
                 app_data->port, app_data->buffsize, app_data->rssi, app_data->snr, app_data->buffer);
+  if(processDownlinkPacket(app_data->buffer, app_data->buffsize)){
+    Serial.println("Downlink processing succcessful");
+  }
+  else{
+    Serial.println("Unkown or invalid command");
+  }
 }
 
 void lorawan_confirm_class_handler(DeviceClass_t Class) {
@@ -151,9 +156,3 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   }
 }
 
-/**@brief Function for handling user timerout event.
-*/
-// void tx_lora_periodic_handler(void) {
-//   appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
-//   send_now = true;
-// }
