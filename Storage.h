@@ -1,7 +1,7 @@
 #ifndef _STORAGE_HANDLER_
 #define _STORAGE_HANDLER_
 
-#include <Arduino.h>
+// #include <Arduino.h>
 #include <string.h>
 
 #define START_ADDRESS 0
@@ -11,6 +11,8 @@
 #define INITIAL_PERIOD_MINUTES 1
 #define CODES_LIMIT 16
 #define HEADER_LENGTH 3
+
+typedef unsigned char byte;
 
 typedef char FixedSizeString[STRING_MAX_SIZE];
 
@@ -28,7 +30,7 @@ enum Downlink_Operation {
 */
 
 
-bool readFromStorage();
-bool processDownlinkPacket(byte* buffer, byte bufLen);
+void readFromStorage();
+void processDownlinkPacket(byte* buffer, byte bufLen);
 
 #endif

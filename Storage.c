@@ -13,7 +13,7 @@ const FixedSizeString debugCodes[CODES_LIMIT + 1] = {
   "15.8.0*02"
 };
 
-bool readFromStorage() {
+void readFromStorage() {
 
   for (int i = 0; i < CODES_LIMIT + 1 && debugCodes[i] != NULL; i++) {
     strcpy(codes[i], debugCodes[i]);
@@ -43,12 +43,12 @@ bool readFromStorage() {
   //   }
 
   //   codes[16] = NULL;
-  return true;
+  // return true;
 }
 
-bool processDownlinkPacket(byte* buffer, byte bufLen) {
+void processDownlinkPacket(byte* buffer, byte bufLen) {
   if (bufLen < 3) {
-    return false;
+    // return false;
   }
 
   byte opcode = buffer[0];
@@ -58,13 +58,13 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
   // Update Tx Period in minutes
   if (opcode == UPDATE_PERIOD && parameter > 0) {
     periodMinutes = parameter;
-    return true;
+    // return true;
   }
 
   // Change RS485 baud speed (index class C)
   else if (opcode == UPDATE_PERIOD && parameter < 7) {
     currentBaudIndex = parameter;
-    return true;
+    // return true;
   }
 
   // Update individual OBIS code
@@ -74,7 +74,7 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
         && (bufLen >= HEADER_LENGTH + dataLen)) {
       memcpy(codes[parameter], buffer + HEADER_LENGTH, dataLen);
       codes[parameter][dataLen - 1] = '\0';
-      return true;
+      // return true;
     }
   }
 
@@ -86,9 +86,9 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
         && (bufLen >= HEADER_LENGTH + dataLen)) {
       memcpy(deviceAddress, buffer + HEADER_LENGTH, dataLen);
       deviceAddress[dataLen - 1] = '\0';
-      return true;
+      // return true;
     }
   }
 
-  return false;
+  // return false;
 }

@@ -1,6 +1,6 @@
 
-// #include <Arduino.h>
-// #include "Storage.h"
+#include "Storage.h"
+#include <Arduino.h>
 #include "MeterInterface.h"
 #include "LoRaWAN_Handler.h"
 
@@ -29,11 +29,12 @@ void setup() {
   }
 
   // Read config and codes
-  if (!readFromStorage()) {
-    Serial.println("Failed to read data config from EEPROM!");
-    while (1)
-      ;
-  }
+  readFromStorage();
+  // if (!readFromStorage()) {
+  //   Serial.println("Failed to read data config from EEPROM!");
+  //   while (1)
+  //     ;
+  // }
 
   // Start RS485 and LoRa interfaces
   initMeterInterface();

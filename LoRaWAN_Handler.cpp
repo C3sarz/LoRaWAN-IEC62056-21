@@ -100,12 +100,13 @@ void lorawan_join_failed_handler(void) {
 void lorawan_rx_handler(lmh_app_data_t* app_data) {
   Serial.printf("Downlink received on port %d, size:%d, rssi:%d, snr:%d, data:%s\n",
                 app_data->port, app_data->buffsize, app_data->rssi, app_data->snr, app_data->buffer);
-  if(processDownlinkPacket(app_data->buffer, app_data->buffsize)){
-    Serial.println("Downlink processing succcessful");
-  }
-  else{
-    Serial.println("Unkown or invalid command");
-  }
+  processDownlinkPacket(app_data->buffer, app_data->buffsize);
+  // if(processDownlinkPacket(app_data->buffer, app_data->buffsize)){
+  //   Serial.println("Downlink processing succcessful");
+  // }
+  // else{
+  //   Serial.println("Unkown or invalid command");
+  // }
 }
 
 void lorawan_confirm_class_handler(DeviceClass_t Class) {
