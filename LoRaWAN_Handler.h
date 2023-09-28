@@ -1,14 +1,13 @@
 #ifndef _LORAWAN_HANDLER_
 #define _LORAWAN_HANDLER_
 
-// #include <Arduino.h>
+#include <Arduino.h>
+#include "Storage.h"
 #include "LoRaWan-Arduino.h" //http://librarymanager/All#SX126x
 #include <SPI.h>
 #include <stdio.h>
 #include "mbed.h"
 #include "rtos.h"
-#include "Storage.h"
-
 
 #define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE /**< Maximum size of scheduler events. */
 #define SCHED_QUEUE_SIZE 60                                       /**< Maximum number of events in the scheduler queue. */
@@ -27,7 +26,7 @@ enum LoRaWAN_Send_Status {
 
 // Definitions
 #define LORAWAN_APP_DATA_BUFF_SIZE 100                     /**< buffer size of the data to be transmitted. */
-extern char currentBaudIndex;
+extern char baseBaudIndex;
 
 // Foward declaration
 void lorawan_has_joined_handler(void);

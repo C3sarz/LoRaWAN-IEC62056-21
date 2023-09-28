@@ -1,20 +1,12 @@
-
-#include "Storage.h"
 #include <Arduino.h>
-#include "MeterInterface.h"
+#include "Storage.h"
 #include "LoRaWAN_Handler.h"
-
-
+#include "MeterInterface.h"
 
 // Parameters
 extern char deviceAddress[];
-extern byte periodMinutes;
-unsigned long requestPeriod = (1000 * 60) * 1;
+extern unsigned long requestPeriod;
 unsigned long lastRequest = millis();
-
-void setReportingPeriod(byte minutes) {
-  requestPeriod = (1000 * 60) * periodMinutes;
-}
 
 void setup() {
   // Initialize Serial for debug output
@@ -29,12 +21,11 @@ void setup() {
   }
 
   // Read config and codes
-  readFromStorage();
-  // if (!readFromStorage()) {
-  //   Serial.println("Failed to read data config from EEPROM!");
-  //   while (1)
-  //     ;
-  // }
+  if (!readFromStorage()) {
+    Serial.println("Failed to read data config from EEPROM!");
+    while (1)
+      ;
+  }
 
   // Start RS485 and LoRa interfaces
   initMeterInterface();
@@ -42,8 +33,7 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
   setupLoRaWAN();
   Serial.println("\r\n==========================\r\nInit successful");
-  Serial.printf("Device address: %s\r\n", deviceAddress);
-  Serial.printf("RS485 Initial Baud Index: %d, Codes: %u\r\n", INITIAL_BAUD_INDEX, countCodes());
+  printSummary();
 }
 
 void loop() {
@@ -55,6 +45,8 @@ void loop() {
       sendHandshake(deviceAddress);
     } else if (rcvd == 'c') {
       sendHandshake(NOADDRESS);
+    } else if (rcvd == 'd') {
+      printSummary();
     } else if (rcvd == 't') {
       byte pkt[] = { 0x1f, 0xff, 0x03, 0x3d, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0xfb, 0x00, 0x00, 0x09, 0x0c, 0x00, 0x00, 0x09, 0x05, 0x00, 0x0e, 0x06, 0x75, 0x00, 0x03, 0x58, 0x4a, 0x00, 0x07, 0xc5, 0xd2, 0x00, 0x0e, 0xab, 0x05 };
       send_lora_frame(pkt, sizeof(pkt));

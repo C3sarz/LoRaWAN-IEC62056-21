@@ -19,16 +19,6 @@
 //   NULL
 // };
 
-// Get amout of codes
-unsigned int countCodes(){
-  unsigned int codesCount = 0;
-    // Count codes until NULL value
-  for(int i = 0; i < CODES_LIMIT && codes[i] != NULL; i++){
-    codesCount++;
-  }
-  return codesCount;
-}
-
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   int packetLen = 0;
 

@@ -10,7 +10,7 @@ void initMeterInterface() {
   digitalWrite(WB_IO2, HIGH);
   RS485.setPins(RS485_TX_PIN, RS485_DE_PIN, RS485_RE_PIN);
   RS485.setTimeout(RS485_TIMEOUT);
-  RS485.begin(ClassCMeterBaudRates[INITIAL_BAUD_INDEX], RS485_SERIAL_CONFIG);
+  RS485.begin(ClassCMeterBaudRates[baseBaudIndex], RS485_SERIAL_CONFIG);
   RS485.receive();
 }
 
@@ -22,12 +22,11 @@ bool changeBaud(int newBaudIndex) {
   }
 
   // No change
-  if (newBaudIndex == currentBaudIndex) {
+  if (newBaudIndex == baseBaudIndex) {
     return false;
   }
 
   // Set up new Baud
-  currentBaudIndex = newBaudIndex;
   int newBaud = ClassCMeterBaudRates[newBaudIndex];
   RS485.noReceive();
   RS485.end();
@@ -131,7 +130,7 @@ void processRS485() {
         Serial.println("Error parsing the data recieved.");
       }
       RS485.flush();
-      if(changeBaud(INITIAL_BAUD_INDEX)){
+      if(changeBaud(baseBaudIndex)){
         Serial.printf("Reset baud to %d.\r\n",ClassCMeterBaudRates[INITIAL_BAUD_INDEX]);
       }
       expectData = false;

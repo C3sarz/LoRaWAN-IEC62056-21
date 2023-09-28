@@ -4,9 +4,9 @@ using namespace std::chrono_literals;
 using namespace std::chrono;
 
 bool doOTAA = true;                                     /**< Number of trials for the join request. */
-DeviceClass_t g_CurrentClass = CLASS_A;                 /* class definition*/
+DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
 LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
-lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;       /* confirm/unconfirm packet definition*/
+lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
 uint8_t gAppPort = 85;                                  /* data port*/
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
@@ -59,9 +59,8 @@ bool setupLoRaWAN() {
   if (!lmh_setSubBandChannels(CHANNEL_MASK)) {
     Serial.println("Failed to set sub band.");
     return false;
-  }
-  else{
-    Serial.printf("Set LoRaWAN Channel mask to %d\r\n",CHANNEL_MASK);
+  } else {
+    Serial.printf("Set LoRaWAN Channel mask to %d\r\n", CHANNEL_MASK);
   }
 
   // Start Join procedure
@@ -93,20 +92,20 @@ void lorawan_join_failed_handler(void) {
   Serial.println("Check if a Gateway is in range!");
   lmh_join();
 }
-/**@brief Function for handling LoRaWan received data from Gateway
+/**@brief Downlink Handler
 
    @param[in] app_data  Pointer to rx data
 */
 void lorawan_rx_handler(lmh_app_data_t* app_data) {
   Serial.printf("Downlink received on port %d, size:%d, rssi:%d, snr:%d, data:%s\n",
                 app_data->port, app_data->buffsize, app_data->rssi, app_data->snr, app_data->buffer);
-  processDownlinkPacket(app_data->buffer, app_data->buffsize);
-  // if(processDownlinkPacket(app_data->buffer, app_data->buffsize)){
-  //   Serial.println("Downlink processing succcessful");
-  // }
-  // else{
-  //   Serial.println("Unkown or invalid command");
-  // }
+
+  if (processDownlinkPacket(app_data->buffer, app_data->buffsize)) {
+    Serial.println("Downlink processing succcessful");
+    printSummary();
+  } else {
+    Serial.println("Unkown or invalid command");
+  }
 }
 
 void lorawan_confirm_class_handler(DeviceClass_t Class) {
@@ -156,4 +155,3 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
     return SEND_FAILED;
   }
 }
-
