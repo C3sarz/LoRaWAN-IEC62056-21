@@ -1,3 +1,4 @@
+#include <sys/_types.h>
 #ifndef _LORAWAN_HANDLER_
 #define _LORAWAN_HANDLER_
 
@@ -26,7 +27,6 @@ enum LoRaWAN_Send_Status {
 
 // Definitions
 #define LORAWAN_APP_DATA_BUFF_SIZE 100                     /**< buffer size of the data to be transmitted. */
-extern char baseBaudIndex;
 
 // Foward declaration
 void lorawan_has_joined_handler(void);

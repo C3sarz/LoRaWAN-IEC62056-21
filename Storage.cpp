@@ -1,9 +1,12 @@
 #include "Storage.h"
 #include "MeterInterface.h"
+extern "C" {
+#include <hardware/flash.h>
+};
 
 char deviceAddress[STRING_MAX_SIZE] = "";
-unsigned long requestPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
-char baseBaudIndex = INITIAL_BAUD_INDEX;
+unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
+int baseBaudIndex = INITIAL_BAUD_INDEX;
 FixedSizeString codes[CODES_LIMIT + 1];
 
 const FixedSizeString debugCodes[CODES_LIMIT + 1] = {
@@ -14,38 +17,99 @@ const FixedSizeString debugCodes[CODES_LIMIT + 1] = {
   "15.8.0*02",
 };
 
+bool dataHasChanged() {
+  const byte* DATA_BASE = (const byte*)XIP_BASE + STORAGE_FLASH_OFFSET;
+  char currentStr[STRING_MAX_SIZE];
+  unsigned int currentAddrOffset = 0;
+
+  // Compare uplink period
+  if (*DATA_BASE != static_cast<byte>(uplinkPeriod / MS_TO_M)) {
+    Serial.printf("O: %u, N: %u\r\n", *DATA_BASE, static_cast<byte>(uplinkPeriod / MS_TO_M));
+    return true;
+  }
+  currentAddrOffset++;
+
+  // Compare baud index
+  if (*(DATA_BASE + currentAddrOffset) != baseBaudIndex) {
+    Serial.printf("O: %u, N: %u\r\n", *(DATA_BASE + currentAddrOffset), baseBaudIndex);
+    return true;
+  }
+  currentAddrOffset++;
+
+  // Compare device address
+  memcpy(currentStr, DATA_BASE + currentAddrOffset, STRING_MAX_SIZE);
+  if (strcmp(currentStr, deviceAddress) != 0) {
+    Serial.printf("O: %s, N: %s\r\n", currentStr, deviceAddress);
+    return true;
+  }
+  currentAddrOffset += STRING_MAX_SIZE;
+
+  // Compare codes
+  for (int i = 0; i < CODES_LIMIT; i++) {
+    memcpy(currentStr, DATA_BASE + currentAddrOffset, STRING_MAX_SIZE);
+    if (strcmp(currentStr, codes[i]) != 0) {
+      Serial.printf("O: %s, N: %s\r\n", currentStr, codes[i]);
+      return true;
+    }
+    currentAddrOffset += STRING_MAX_SIZE;
+  }
+  return false;
+}
+
+
+bool writeToStorage() {
+
+  // Check if there are any changes
+  if (!dataHasChanged()) {
+    Serial.println("No change in data detected");
+    return false;
+  }
+  Serial.println("Data change detected");
+
+  // Serialize data
+  byte storageBuffer[STORAGE_SIZE];
+  byte uplinkMinutes = static_cast<byte>(uplinkPeriod / MS_TO_M);
+  unsigned int currentAddrOffset = 2;
+  memcpy(storageBuffer, &uplinkMinutes, 1);
+  memcpy(storageBuffer + 1, &baseBaudIndex, 1);
+  memcpy(storageBuffer + currentAddrOffset, deviceAddress, STRING_MAX_SIZE);
+  currentAddrOffset += STRING_MAX_SIZE;
+  for (int i = 0; i < CODES_LIMIT; i++) {
+    memcpy(storageBuffer + currentAddrOffset, codes[i], STRING_MAX_SIZE);
+    currentAddrOffset += STRING_MAX_SIZE;
+  }
+
+  // Erase flash sector and write
+  noInterrupts();
+  flash_range_erase(STORAGE_FLASH_OFFSET, FLASH_SECTOR_SIZE);
+  flash_range_program(STORAGE_FLASH_OFFSET, storageBuffer, FLASH_SECTOR_SIZE);
+  interrupts();
+
+  return true;
+}
+
 bool readFromStorage() {
 
   codes[CODES_LIMIT][0] = 0;
-  for (int i = 0; i < CODES_LIMIT && debugCodes[i][0] != '\0'; i++) {
-    strcpy(codes[i], debugCodes[i]);
+  const byte* DATA_BASE = (const byte*)XIP_BASE + STORAGE_FLASH_OFFSET;
+  unsigned int currentAddrOffset = 0;
+
+  byte uplinkMinutes = INITIAL_PERIOD_MINUTES;
+  memcpy(&uplinkMinutes, DATA_BASE, 1);
+  uplinkPeriod = uplinkMinutes * MS_TO_M;
+  currentAddrOffset++;
+
+  memcpy(&baseBaudIndex, DATA_BASE + currentAddrOffset, 1);
+  currentAddrOffset++;
+
+  memcpy(deviceAddress, DATA_BASE + currentAddrOffset, STRING_MAX_SIZE);
+  currentAddrOffset += STRING_MAX_SIZE;
+
+  for (int i = 0; i < CODES_LIMIT; i++) {
+    memcpy(codes[i], DATA_BASE + currentAddrOffset, STRING_MAX_SIZE);
+    currentAddrOffset += STRING_MAX_SIZE;
   }
-  memcpy(deviceAddress, "0", 2);
 
-
-
-  //   EEPROM.begin(3 + 16 * STRING_MAX_SIZE);
-  //   // Reporting period
-  //   periodMinutes = EEPROM.read(START_ADDRESS) * MS_TO_M;
-
-  //   // RS485 Baud index
-  //   currentBaudIndex = EEPROM.read(START_ADDRESS + 1);
-
-  //   // Device address
-  //   for (int i = 0; i < STRING_MAX_SIZE; i++) {
-  //     deviceAddress[i] = static.cast<char>(EEPROM.read((START_ADDRESS + 2) + i));
-  //   }
-
-  //   // OBIS Codes
-  //   for (int codeIndex = 0; codeIndex < CODES_LIMIT; codeIndex++) {
-  //     unsigned int currentOffset = CODES_START_ADDR + (codeIndex * STRING_MAX_SIZE);
-  //     for (int i = 0; i < STRING_MAX_SIZE; i++) {
-  //       codes[codeIndex][i] = static.cast<char>(EEPROM.read(currentOffset + i));
-  //     }
-  //     codes[codeIndex][STRING_MAX_SIZE - 1] = '\0';
-  //   }
-
-  //   codes[16] = NULL;
   return true;
 }
 
@@ -68,7 +132,7 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
 
   // Update Tx Period in minutes
   if (opcode == UPDATE_PERIOD && parameter > 0) {
-    requestPeriod = MS_TO_M * parameter;
+    uplinkPeriod = MS_TO_M * parameter;
     return true;
   }
 
@@ -103,16 +167,19 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
       return true;
     }
   }
+  else if (opcode == SAVE_CHANGES) {
+    return writeToStorage();
+  }
   return false;
 }
 
 void printSummary() {
   Serial.println("=========\r\nCODES:");
   for (unsigned int i = 0; i < CODES_LIMIT; i++) {
-    Serial.printf("Code #%d: %s\r\n", i, codes[i]);
+    Serial.printf("Code #%d: \"%s\"\r\n", i, codes[i]);
   }
   Serial.printf("Device Address: %s\r\n", deviceAddress);
   Serial.printf("Baud speed index: %u\r\n", baseBaudIndex);
-  Serial.printf("Device will report every %lu minutes.\r\n", requestPeriod / MS_TO_M);
+  Serial.printf("Device will report every %lu minutes.\r\n", uplinkPeriod / MS_TO_M);
   Serial.println("=========");
 }

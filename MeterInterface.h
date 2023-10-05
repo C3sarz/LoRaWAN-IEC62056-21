@@ -28,6 +28,7 @@ const int ClassCMeterBaudRates[] {
 };
 
 const char NOADDRESS[] = "0";
+extern int baseBaudIndex;
 
 void initMeterInterface();
 void processRS485();

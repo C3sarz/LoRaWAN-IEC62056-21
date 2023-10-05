@@ -131,7 +131,7 @@ void processRS485() {
       }
       RS485.flush();
       if(changeBaud(baseBaudIndex)){
-        Serial.printf("Reset baud to %d.\r\n",ClassCMeterBaudRates[INITIAL_BAUD_INDEX]);
+        Serial.printf("Reset baud to %d.\r\n",ClassCMeterBaudRates[baseBaudIndex]);
       }
       expectData = false;
     }
