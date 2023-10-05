@@ -37,5 +37,6 @@ bool writeToStorage();
 bool processDownlinkPacket(byte* buffer, byte bufLen);
 void printSummary();
 bool dataHasChanged();
+void loadDefaultValues();
 
 #endif

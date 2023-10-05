@@ -54,6 +54,8 @@ void loop() {
       writeToStorage();
     } else if (rcvd == 'q') {
       Serial.printf("Result: %d\r\n",dataHasChanged());
+    } else if (rcvd == 'l') {
+      loadDefaultValues();
     } 
   }
   // Status request

@@ -1,24 +1,5 @@
 #include "IEC62056-21_Parser.h"
 
-// const char* codes[CODES_LIMIT + 1] = {
-//   "128.8.10",
-//   "128.8.20",
-//   "128.8.30",
-//   "128.8.12",
-//   "128.8.22",
-//   "128.8.32",
-//   "32.7.0",
-//   "52.7.0",
-//   "72.7.0",
-//   "15.7.0",
-//   "15.4.0",
-//   "15.8.0",
-//   "15.6.0",
-//   "13.5.0",
-//   "15.6.0*02",
-//   NULL
-// };
-
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   int packetLen = 0;
 

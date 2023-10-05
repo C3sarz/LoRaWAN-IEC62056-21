@@ -9,13 +9,35 @@ unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
 int baseBaudIndex = INITIAL_BAUD_INDEX;
 FixedSizeString codes[CODES_LIMIT + 1];
 
-const FixedSizeString debugCodes[CODES_LIMIT + 1] = {
+const char defaultDeviceAddress[] = "";
+const char* defaultCodes[] = {
+  "128.8.10",
+  "128.8.20",
+  "128.8.30",
+  "128.8.12",
+  "128.8.22",
+  "128.8.32",
   "32.7.0",
   "52.7.0",
   "72.7.0",
-  "0.9.2*255",
-  "15.8.0*02",
+  "15.7.0",
+  "15.5.0",
+  "15.8.0",
+  "15.6.0",
+  "13.5.0",
+  "",
+  ""
 };
+
+void loadDefaultValues(){
+  uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
+  baseBaudIndex = INITIAL_BAUD_INDEX;
+  strcpy(deviceAddress, defaultDeviceAddress);
+  for (int i = 0; i < CODES_LIMIT; i++) {
+    memcpy(codes[i], defaultCodes[i], STRING_MAX_SIZE);
+  }
+  Serial.println("Default values loaded...");
+}
 
 bool dataHasChanged() {
   const byte* DATA_BASE = (const byte*)XIP_BASE + STORAGE_FLASH_OFFSET;
@@ -107,9 +129,9 @@ bool readFromStorage() {
 
   for (int i = 0; i < CODES_LIMIT; i++) {
     memcpy(codes[i], DATA_BASE + currentAddrOffset, STRING_MAX_SIZE);
+    codes[i][15] = '\0';
     currentAddrOffset += STRING_MAX_SIZE;
   }
-
   return true;
 }
 
