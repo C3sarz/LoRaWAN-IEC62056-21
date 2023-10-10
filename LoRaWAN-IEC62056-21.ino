@@ -9,9 +9,21 @@ extern unsigned long uplinkPeriod;
 unsigned long lastRequest = millis();
 
 void setup() {
+  pinMode(PIN_LED1, OUTPUT);
+  pinMode(PIN_LED2, OUTPUT);
+  digitalWrite(PIN_LED1,1);
+  digitalWrite(PIN_LED2,1);
   // Initialize Serial for debug output
   time_t timeout = millis();
   Serial.begin(115200);
+  
+  while (!Serial) {
+    if ((millis() - timeout) < 5000) {
+      delay(100);
+    } else {
+      break;
+    }
+  }
 
   // Read config and codes
   if (!readFromStorage()) {
@@ -27,6 +39,7 @@ void setup() {
   setupLoRaWAN();
   Serial.println("\r\n==========================\r\nInit successful");
   printSummary();
+  digitalWrite(PIN_LED1,0);
 }
 
 void loop() {
@@ -67,7 +80,7 @@ void loop() {
     if (lmh_join_status_get() == LMH_SET) {
       sendHandshake(deviceAddress);
     } else {
-      lmh_join();
+      Serial.println("Device has not joined network yet, cancel request...");
     }
     lastRequest = millis();
   }
