@@ -56,6 +56,7 @@ bool setupLoRaWAN() {
     return false;
   }
 
+  // Set LoRaWAN channel
   if (!lmh_setSubBandChannels(CHANNEL_MASK)) {
     Serial.println("Failed to set sub band.");
     return false;
@@ -124,13 +125,11 @@ void lorawan_conf_finished(bool result) {
   Serial.printf("Confirmed TX %s\n", result ? "success" : "failed");
 }
 
-// =====================================================================
 /* Send LoRaWAN payload */
 LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   Serial.println("Check join..");
   if (lmh_join_status_get() != LMH_SET) {
     Serial.println("Not joined...");
-    //Not joined, try again later
     return NOT_JOINED;
   }
 
@@ -138,11 +137,14 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   if (bufferLen > LORAWAN_APP_DATA_BUFF_SIZE) {
     return INVALID_DATA_LENGTH;
   }
+
+  // Set parameters
   m_lora_app_data.port = gAppPort;
   memcpy(m_lora_app_data.buffer, sendBuffer, bufferLen);
   m_lora_app_data.buffsize = bufferLen;
   Serial.printf("Data copied to LoRa buffer, s:%u\r\n", bufferLen);
 
+  // Send packet
   lmh_error_status error = lmh_send(&m_lora_app_data, g_CurrentConfirm);
   Serial.println("sent..");
   if (error == LMH_SUCCESS) {

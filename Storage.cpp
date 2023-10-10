@@ -1,12 +1,20 @@
+#include <cstring>
 #include "Storage.h"
 #include "MeterInterface.h"
 extern "C" {
 #include <hardware/flash.h>
 };
 
+/// IEC62056-21 Meter Address
 char deviceAddress[STRING_MAX_SIZE] = "";
+
+/// Device UPLINK period in milliseconds
 unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
+
+/// Base baud rate index
 int baseBaudIndex = INITIAL_BAUD_INDEX;
+
+/// Loaded OBIS codes
 FixedSizeString codes[CODES_LIMIT + 1];
 
 const char defaultDeviceAddress[] = "";
@@ -29,16 +37,24 @@ const char* defaultCodes[] = {
   ""
 };
 
-void loadDefaultValues(){
+/*
+  Load default device parameters (saved as constants in code).
+*/
+void loadDefaultValues() {
   uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
   baseBaudIndex = INITIAL_BAUD_INDEX;
   strcpy(deviceAddress, defaultDeviceAddress);
   for (int i = 0; i < CODES_LIMIT; i++) {
-    memcpy(codes[i], defaultCodes[i], STRING_MAX_SIZE);
+    memset(codes[i], 0, STRING_MAX_SIZE);
+    strcpy(codes[i], defaultCodes[i]);
   }
   Serial.println("Default values loaded...");
 }
 
+/*
+ Check if loaded device parameters are different
+  to the stored parameters in flash
+ */
 bool dataHasChanged() {
   const byte* DATA_BASE = (const byte*)XIP_BASE + STORAGE_FLASH_OFFSET;
   char currentStr[STRING_MAX_SIZE];
@@ -78,7 +94,10 @@ bool dataHasChanged() {
   return false;
 }
 
-
+/* 
+  Write device parameters into nonvolatile storage. 
+  WARNING: Will wear down flash if not used properly and sparingly.
+*/
 bool writeToStorage() {
 
   // Check if there are any changes
@@ -106,12 +125,11 @@ bool writeToStorage() {
   flash_range_erase(STORAGE_FLASH_OFFSET, FLASH_SECTOR_SIZE);
   flash_range_program(STORAGE_FLASH_OFFSET, storageBuffer, FLASH_SECTOR_SIZE);
   interrupts();
-
   return true;
 }
 
+// Read saved settings from nonvolatile storage
 bool readFromStorage() {
-
   codes[CODES_LIMIT][0] = 0;
   const byte* DATA_BASE = (const byte*)XIP_BASE + STORAGE_FLASH_OFFSET;
   unsigned int currentAddrOffset = 0;
@@ -135,6 +153,7 @@ bool readFromStorage() {
   return true;
 }
 
+// Process downlink commands
 bool processDownlinkPacket(byte* buffer, byte bufLen) {
 
   for (int i = 0; i < bufLen; i++) {
@@ -145,11 +164,9 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
   if (bufLen < 3) {
     return false;
   }
-
   byte opcode = buffer[0];
   byte parameter = buffer[1];
   byte dataLen = buffer[2];
-
   Serial.printf("OP:%u, PRM:%u, LEN:%u\r\n", opcode, parameter, dataLen);
 
   // Update Tx Period in minutes
@@ -189,12 +206,15 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
       return true;
     }
   }
+
+  // Save device properties to nonvolatile storage
   else if (opcode == SAVE_CHANGES) {
     return writeToStorage();
   }
   return false;
 }
 
+// Print summary of device parameters on serial console
 void printSummary() {
   Serial.println("=========\r\nCODES:");
   for (unsigned int i = 0; i < CODES_LIMIT; i++) {

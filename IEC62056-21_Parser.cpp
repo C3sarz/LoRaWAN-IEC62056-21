@@ -3,9 +3,12 @@
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
   int packetLen = 0;
 
-  if(!(packet.itemPresentMask)){
+  if (!(packet.itemPresentMask)) {
     return 0;
   }
+
+  // Command
+  resultBuffer[packetLen++] = 0x01;
 
   // Add present values indicator to packet.
   // Copy byte for byte reversing endianess.
@@ -99,7 +102,7 @@ bool parseData(char buffer[], int len, Packet* packetPtr) {
   // DEBUG
   Serial.printf("Finished parsing %u lines.\r\n", count);
   for (int i = 0; i < CODES_LIMIT; i++) {
-    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i+1, packetPtr->values[i], packetPtr->decimalPoints[i]);
+    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, packetPtr->values[i], packetPtr->decimalPoints[i]);
   }
 
 

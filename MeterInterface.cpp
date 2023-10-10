@@ -14,6 +14,7 @@ void initMeterInterface() {
   RS485.receive();
 }
 
+// Change RS485 baud rate
 bool changeBaud(int newBaudIndex) {
   // Invalid baud
   if (!(newBaudIndex <= 6 && newBaudIndex >= 0)) {
@@ -26,7 +27,7 @@ bool changeBaud(int newBaudIndex) {
     return false;
   }
 
-  // Set up new Baud
+  // Set up new baud rate
   int newBaud = ClassCMeterBaudRates[newBaudIndex];
   RS485.noReceive();
   RS485.end();
@@ -36,6 +37,7 @@ bool changeBaud(int newBaudIndex) {
   return true;
 }
 
+// Send ACK to meter to begin data transfer
 void sendBaudAck(int baudIndex) {
   char baudChar = '0' + static_cast<char>(baudIndex);
   char ackBuf[] = { 0x06, '0', baudChar, '0', 0x0D, 0x0A, '\0' };
@@ -45,8 +47,8 @@ void sendBaudAck(int baudIndex) {
   Serial.printf("Sent ack: %s for baud class %c.\r\n", ackBuf, baudChar);
 }
 
+// Initiate communication with a meter with a handshake
 void sendHandshake(const char address[]) {
-  // char buf1[] = {'/','?','8','6','9','0','3', '6', '3', '8','!',0x0D, 0x0A};
   expectData = false;
   RS485.beginTransmission();
   RS485.write(requestStart, strlen(requestStart));
@@ -56,6 +58,7 @@ void sendHandshake(const char address[]) {
   Serial.printf("Sent data: %s%s%s \r\n", requestStart, address, requestEnd);
 }
 
+// Check if recieved packet is the handshake response and act upon result
 bool isHandshakeResponse() {
   // Struct: /ISk5\2MT382-1000
   char* idPtr = strchr(dataBuf, '/');
@@ -78,7 +81,6 @@ bool isHandshakeResponse() {
   if (baudFound) {
     Serial.printf("Found baud index %d in reply.\r\n", result);
   }
-
   // ACK baud rate and change it
   if (baudFound && NEGOTIATE_BAUD) {
     Serial.printf("Will ACK for baud %d\r\n", ClassCMeterBaudRates[result]);
@@ -130,8 +132,8 @@ void processRS485() {
         Serial.println("Error parsing the data recieved.");
       }
       RS485.flush();
-      if(changeBaud(baseBaudIndex)){
-        Serial.printf("Reset baud to %d.\r\n",ClassCMeterBaudRates[baseBaudIndex]);
+      if (changeBaud(baseBaudIndex)) {
+        Serial.printf("Reset baud to %d.\r\n", ClassCMeterBaudRates[baseBaudIndex]);
       }
       expectData = false;
     }
