@@ -5,8 +5,11 @@ extern "C" {
 #include <hardware/flash.h>
 };
 
-/// IEC62056-21 Meter Address
+/// IEC62056-21 Meter Address, mutable
 char deviceAddress[STRING_MAX_SIZE] = "";
+
+// DEFAULT
+const char defaultDeviceAddress[] = "";
 
 /// Device UPLINK period in milliseconds
 unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
@@ -17,7 +20,6 @@ int baseBaudIndex = INITIAL_BAUD_INDEX;
 /// Loaded OBIS codes
 FixedSizeString codes[CODES_LIMIT + 1];
 
-const char defaultDeviceAddress[] = "";
 const char* defaultCodes[] = {
   "128.8.10",
   "128.8.20",

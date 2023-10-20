@@ -120,6 +120,7 @@ void processRS485() {
         int sendError = send_lora_frame(sendBuf, res);
 
         if (res && !sendError) {
+          digitalWrite(PIN_LED1,0);
           Serial.println("Packet sent successfully!");
           Serial.printf("Packet size: %u\r\n", res);
           for (int i = 0; i < res; i++) {

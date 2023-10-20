@@ -14,7 +14,7 @@ extern "C" {
 };
 
 #define STRING_MAX_SIZE 16
-#define INITIAL_BAUD_INDEX 0
+#define INITIAL_BAUD_INDEX 5
 #define INITIAL_PERIOD_MINUTES 1
 #define CODES_LIMIT 16
 #define HEADER_LENGTH 3

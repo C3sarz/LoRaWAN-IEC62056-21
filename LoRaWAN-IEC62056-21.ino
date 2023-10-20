@@ -34,12 +34,9 @@ void setup() {
 
   // Start RS485 and LoRa interfaces
   initMeterInterface();
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
   setupLoRaWAN();
   Serial.println("\r\n==========================\r\nInit successful");
   printSummary();
-  digitalWrite(PIN_LED1,0);
 }
 
 void loop() {
