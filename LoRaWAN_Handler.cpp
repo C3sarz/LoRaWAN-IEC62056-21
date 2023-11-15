@@ -7,7 +7,7 @@ bool doOTAA = true;                                     /**< Number of trials fo
 DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
 LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
 lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
-uint8_t gAppPort = 85;                                  /* data port*/
+uint8_t gAppPort = 1;                                  /* data port*/
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
@@ -22,7 +22,7 @@ static lmh_callback_t g_lora_callbacks = { BoardGetBatteryLevel, BoardGetUniqueI
                                            lorawan_unconf_finished, lorawan_conf_finished };
 //OTAA keys !!!! KEYS ARE MSB !!!!
 // AC1F09FFFE05159C
-uint8_t nodeDeviceEUI[8] = { 0xAC, 0x1F, 0x09, 0xFF, 0xFE, 0x05, 0x15, 0xA0 };
+uint8_t nodeDeviceEUI[8] = { 0xAC, 0x1F, 0x09, 0xFF, 0xFE, 0x05, 0x15, 0x9B };
 uint8_t nodeAppEUI[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 uint8_t nodeAppKey[16] = { 0x55, 0x72, 0x40, 0x4C, 0x69, 0x6E, 0x6B, 0x4C, 0x6F, 0x52, 0x61, 0x32, 0x30, 0x31, 0x38, 0x23 };
 
@@ -77,7 +77,7 @@ void lorawan_has_joined_handler(void) {
   if (ret == LMH_SUCCESS) {
     delay(5000);
     byte initBuf[] = {0xAA, 0x01};
-    send_lora_frame(initBuf, sizeof(initBuf));
+    send_lora_frame(initBuf, sizeof(initBuf), true);
     // Start the application timer. Time has to be in microseconds
     // appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
   } else {
@@ -124,7 +124,7 @@ void lorawan_conf_finished(bool result) {
 }
 
 /* Send LoRaWAN payload */
-LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
+LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen, bool confirmed) {
   Serial.println("Check join..");
   if (lmh_join_status_get() != LMH_SET) {
     Serial.println("Not joined...");
@@ -142,8 +142,11 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen) {
   m_lora_app_data.buffsize = bufferLen;
   Serial.printf("Data copied to LoRa buffer, s:%u\r\n", bufferLen);
 
+  // Set confirmed/unconfirmed
+  lmh_confirm confirmType = confirmed ? LMH_CONFIRMED_MSG : LMH_UNCONFIRMED_MSG;
+
   // Send packet
-  lmh_error_status error = lmh_send(&m_lora_app_data, g_CurrentConfirm);
+  lmh_error_status error = lmh_send(&m_lora_app_data, confirmType);
   Serial.println("sent..");
   if (error == LMH_SUCCESS) {
     count++;
