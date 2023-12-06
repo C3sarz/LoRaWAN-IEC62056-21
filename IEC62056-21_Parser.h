@@ -18,7 +18,7 @@ public:
   }
 };
 
-extern FixedSizeString codes[CODES_LIMIT + 1];
+extern CodeString codes[CODES_LIMIT + 1];
 
 bool parseData(char buffer[], int len, Packet* packetPtr);
 byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet);

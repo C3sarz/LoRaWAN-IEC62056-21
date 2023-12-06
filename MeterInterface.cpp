@@ -117,7 +117,7 @@ void processRS485() {
         // Assemble and send packet
         byte sendBuf[LORAWAN_APP_DATA_BUFF_SIZE];
         int res = assemblePacket(sendBuf, 100, packet);
-        int sendError = send_lora_frame(sendBuf, res, false);
+        int sendError = send_lora_frame(sendBuf, res, SEND_CONFIRMED);
 
         if (res && !sendError) {
           digitalWrite(PIN_LED1,0);

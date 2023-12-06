@@ -1,7 +1,6 @@
-#include <sys/_types.h>
+
 #ifndef _LORAWAN_HANDLER_
 #define _LORAWAN_HANDLER_
-
 #include <Arduino.h>
 #include "Storage.h"
 #include "LoRaWan-Arduino.h"  //http://librarymanager/All#SX126x
@@ -15,9 +14,11 @@
 #define LORAWAN_DATARATE DR_3                                     /*LoRaMac datarates definition, from DR_0 to DR_5*/
 #define LORAWAN_TX_POWER TX_POWER_0                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3
-#define ALOHA_RANDOM_TIME_MAX 5000
+#define RANDOM_TIME_MAX 10000
+#define SEND_CONFIRMED 0
 #define ADR_MODE LORAWAN_ADR_OFF
 #define CHANNEL_MASK 2 /* Channels 8-15, (Milesight default) */
+#define LORAWAN_APP_DATA_BUFF_SIZE 100 /**< buffer size of the data to be transmitted. */
 
 enum LoRaWAN_Send_Status {
   SEND_OK,
@@ -26,10 +27,8 @@ enum LoRaWAN_Send_Status {
   NOT_JOINED,
 };
 
-// Definitions
-#define LORAWAN_APP_DATA_BUFF_SIZE 100 /**< buffer size of the data to be transmitted. */
 
-// Foward declaration
+// Function Prototypes
 void lorawan_has_joined_handler(void);
 void lorawan_join_failed_handler(void);
 void lorawan_rx_handler(lmh_app_data_t* app_data);

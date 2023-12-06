@@ -18,7 +18,10 @@ unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
 int baseBaudIndex = INITIAL_BAUD_INDEX;
 
 /// Loaded OBIS codes
-FixedSizeString codes[CODES_LIMIT + 1];
+CodeString codes[CODES_LIMIT + 1];
+
+// Reboot value
+extern bool setReboot;
 
 const char* defaultCodes[] = {
   "128.8.11",
@@ -212,6 +215,15 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
   // Save device properties to nonvolatile storage
   else if (opcode == SAVE_CHANGES) {
     return writeToStorage();
+  }
+
+  // Reboot command
+  else if (opcode == REBOOT) {
+    if (parameter == 0xFF) {
+      setReboot = true;
+      Serial.println("Reboot requested...");
+      return true;
+    }
   }
   return false;
 }

@@ -47,6 +47,7 @@ bool isQueriedCode(char* code, int* codeIndex) {
   return false;
 }
 
+// Parses the IEC 62056-21 data DESTRUCTIVELY, and saves relevant values if found.
 bool parseData(char buffer[], int len, Packet* packetPtr) {
   unsigned int count = 0;
 
@@ -66,9 +67,7 @@ bool parseData(char buffer[], int len, Packet* packetPtr) {
   while (nextItem != NULL) {
     nextItem[0] = '\0';
     count++;
-
     Serial.printf("-------------------\r\nLine: %s\r\n", currentItem);
-
     idStringPtr = strchr(currentItem, ':');
     dataStartPtr = strchr(currentItem, '(');
     dataBlockEndPtr = strchr(currentItem, ')');
@@ -135,6 +134,9 @@ uint32_t getDecimalCountMask(byte decimals[]) {
   return result;
 }
 
+/* Removes decimal point from value, transforming it into an INT, and saves it for TX.
+   Also saves the decimal place count, and marks the item as present in the mask.
+*/
 void saveNumericalValue(char* valueStr, int position, Packet* packetPtr) {
   char* decimalCharPtr = strchr(valueStr, '.');
   if (decimalCharPtr != NULL) {

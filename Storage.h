@@ -1,5 +1,5 @@
 /* 
-  EEPROM layout, starting at START_ADDRESS.
+  EEPROM layout, starting at STORAGE_FLASH_OFFSET.
   ========================================================================
   | periodM (1B) | baudIndx (1B) | address (16B)  | code n... |
   ========================================================================
@@ -22,14 +22,15 @@ extern "C" {
 #define STORAGE_FLASH_OFFSET PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE  // last sector in flash
 
 const unsigned long MS_TO_M = 1000 * 60;
-typedef char FixedSizeString[STRING_MAX_SIZE];
+typedef char CodeString[STRING_MAX_SIZE];
 
 enum Downlink_Operation {
   UPDATE_PERIOD = 0x01,
   UPDATE_CODE,
   CHANGE_DEVICE_ADDR,
   CHANGE_SERIAL_BAUD,
-  SAVE_CHANGES
+  SAVE_CHANGES,
+  REBOOT,
 };
 
 bool readFromStorage();
