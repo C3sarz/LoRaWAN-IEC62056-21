@@ -50,8 +50,8 @@ void setup() {
   // Start RS485 and LoRa interfaces
   initMeterInterface();
   setupLoRaWAN();
-  // analogReadResolution(12);  // Can be 8, 10, 12 or 14
-  // randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
+  analogReadResolution(12);  // Can be 8, 10, 12 or 14
+  randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
   Serial.println("\r\n==========================\r\nInit successful");
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_MAX);
   printSummary();
