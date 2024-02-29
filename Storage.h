@@ -14,7 +14,8 @@ extern "C" {
 };
 
 #define STRING_MAX_SIZE 16
-#define INITIAL_BAUD_INDEX 5
+#define CONFIRMED_COUNT 100
+#define INITIAL_BAUD_INDEX 0
 #define INITIAL_PERIOD_MINUTES 2
 #define CODES_LIMIT 16
 #define HEADER_LENGTH 3
@@ -23,6 +24,10 @@ extern "C" {
 
 const unsigned long MS_TO_M = 1000 * 60;
 typedef char CodeString[STRING_MAX_SIZE];
+
+// Globals
+extern volatile uint linkCheckCount;
+extern volatile bool setReboot;
 
 enum Downlink_Operation {
   UPDATE_PERIOD = 0x01,

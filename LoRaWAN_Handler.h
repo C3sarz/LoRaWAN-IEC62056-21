@@ -15,7 +15,6 @@
 #define LORAWAN_TX_POWER TX_POWER_0                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3
 #define RANDOM_TIME_MAX 10000
-#define SEND_CONFIRMED 0
 #define ADR_MODE LORAWAN_ADR_OFF
 #define CHANNEL_MASK 2 /* Channels 8-15, (Milesight default) */
 #define LORAWAN_APP_DATA_BUFF_SIZE 100 /**< buffer size of the data to be transmitted. */

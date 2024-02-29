@@ -61,6 +61,7 @@ void sendHandshake(const char address[]) {
 // Check if recieved packet is the handshake response and act upon result
 bool isHandshakeResponse() {
   // Struct: /ISk5\2MT382-1000
+  ///         ISk5ME172-0000
   char* idPtr = strchr(dataBuf, '/');
   int result;
   bool baudFound = false;
@@ -75,15 +76,18 @@ bool isHandshakeResponse() {
     result = idPtr[4] - '0';
     if (result <= 6 && result >= 0) {
       baudFound = true;
+      // result = 0; //debug
     }
   }
 
+  // Found baud rate in message contents
   if (baudFound) {
     Serial.printf("Found baud index %d in reply.\r\n", result);
   }
   // ACK baud rate and change it
   if (baudFound && NEGOTIATE_BAUD) {
     Serial.printf("Will ACK for baud %d\r\n", ClassCMeterBaudRates[result]);
+    // delay(300);
     sendBaudAck(result);
     changeBaud(result);
   }
@@ -117,10 +121,16 @@ void processRS485() {
         // Assemble and send packet
         byte sendBuf[LORAWAN_APP_DATA_BUFF_SIZE];
         int res = assemblePacket(sendBuf, 100, packet);
-        int sendError = send_lora_frame(sendBuf, res, SEND_CONFIRMED);
+
+        int sendError = -1;
+        if (linkCheckCount > CONFIRMED_COUNT) {
+          sendError = send_lora_frame(sendBuf, res, true);
+        } else {
+          sendError = send_lora_frame(sendBuf, res, false);
+        }
 
         if (res && !sendError) {
-          digitalWrite(PIN_LED1,0);
+          digitalWrite(PIN_LED1, 0);
           Serial.println("Packet sent successfully!");
           Serial.printf("Packet size: %u\r\n", res);
           for (int i = 0; i < res; i++) {

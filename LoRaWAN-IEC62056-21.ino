@@ -7,15 +7,18 @@ extern "C" {
 #include "LoRaWAN_Handler.h"
 #include "MeterInterface.h"
 
-#define DEBUG_MODE 0
-
-// Parameters
-volatile bool setReboot = false;
+// Uplink Parameters
 extern char deviceAddress[];
 extern unsigned long uplinkPeriod;
 unsigned long lastRequest = millis();
-unsigned long lastWtchReset = millis();
 unsigned long periodResult;
+
+// Watchdog and reset variables
+volatile bool setReboot = false;
+unsigned long lastWatchdogReset = millis();
+
+// Link check variables
+volatile uint linkCheckCount = 0;
 
 void setup() {
 
@@ -37,8 +40,8 @@ void setup() {
   }
 
   // Watchdog Init
-  watchdog_enable(5000, false);
-  lastWtchReset = millis();
+  // watchdog_enable(5000, false);
+  lastWatchdogReset = millis();
 
   // Read config from flash
   if (!readFromStorage()) {
@@ -50,16 +53,23 @@ void setup() {
   // Start RS485 and LoRa interfaces
   initMeterInterface();
   setupLoRaWAN();
-  analogReadResolution(12);  // Can be 8, 10, 12 or 14
+
+  // Set random seed from analog voltage in A0.
+  analogReadResolution(12);
   randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
+
+  // Print summary and init
   Serial.println("\r\n==========================\r\nInit successful");
+  Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_MAX);
-  printSummary();
+  // printSummary();
 }
 
 void loop() {
   processRS485();
   if (Serial.available() > 0) {
+
+    // Serial console debug commands
     int rcvd = Serial.read();
     Serial.printf("Rcvd: %c\r\n", rcvd);
     switch (rcvd) {
@@ -103,12 +113,7 @@ void loop() {
   // Periodical request
   else if ((millis() - lastRequest) > periodResult) {
     if (lmh_join_status_get() == LMH_SET) {
-      if (!DEBUG_MODE) {
-        sendHandshake(deviceAddress);
-      } else {
-        byte pkt[] = { 98, 175, 221, 187, 147, 238, 76, 207, 29, 232, 168, 222, 140, 145, 242, 57, 62, 58, 168, 174, 143, 140, 51, 250, 16, 11, 143, 202, 22, 141, 37, 46, 242, 229, 158, 255, 251, 154, 222, 18, 24, 155, 67, 55, 249, 194, 246, 18, 25, 183, 143, 50, 39, 194, 253, 177, 216, 142, 64, 76, 185, 130, 124, 77 };
-        send_lora_frame(pkt, sizeof(pkt), false);
-      }
+      sendHandshake(deviceAddress);
     } else {
       Serial.println("Device has not joined network yet, cancel request...");
     }
@@ -116,8 +121,8 @@ void loop() {
     lastRequest = millis();
   }
 
-  if (!setReboot && (millis() - lastWtchReset > 1000)) {
+  if (!setReboot && (millis() - lastWatchdogReset > 1000)) {
     watchdog_update();
-    lastWtchReset = millis();
+    lastWatchdogReset = millis();
   }
 }

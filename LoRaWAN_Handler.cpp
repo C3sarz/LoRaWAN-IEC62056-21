@@ -7,7 +7,7 @@ bool doOTAA = true;                                     /**< Number of trials fo
 DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
 LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
 lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
-uint8_t gAppPort = 1;                                  /* data port*/
+uint8_t gAppPort = 1;                                   /* data port*/
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
@@ -28,9 +28,6 @@ uint8_t nodeAppKey[16] = { 0x55, 0x72, 0x40, 0x4C, 0x69, 0x6E, 0x6B, 0x4C, 0x6F,
 
 static uint8_t m_lora_app_data_buffer[LORAWAN_APP_DATA_BUFF_SIZE];               //< Lora user application data buffer.
 static lmh_app_data_t m_lora_app_data = { m_lora_app_data_buffer, 0, 0, 0, 0 };  //< Lora user application data structure.
-
-// mbed::Ticker appTimer;
-// void tx_lora_periodic_handler(void);
 
 static uint32_t count = 0;
 static uint32_t count_fail = 0;
@@ -62,7 +59,10 @@ bool setupLoRaWAN() {
 
   // Start Join procedure
   lmh_join();
-  Serial.println("Setup finished.");
+  Serial.print("Setup finished for ");
+  for (int i = 0; i < sizeof(nodeDeviceEUI); i++) {
+    Serial.printf("0x%02hhx ", nodeDeviceEUI[i]);
+  }
   return true;
 }
 
@@ -71,12 +71,12 @@ bool setupLoRaWAN() {
 void lorawan_has_joined_handler(void) {
 
   Serial.println("OTAA Mode, Network Joined!");
-  digitalWrite(PIN_LED2,0);
+  digitalWrite(PIN_LED2, 0);
 
   lmh_error_status ret = lmh_class_request(g_CurrentClass);
   if (ret == LMH_SUCCESS) {
     delay(5000);
-    byte initBuf[] = {0xAA, 0x01};
+    byte initBuf[] = { 0xAA, 0x01 };
     send_lora_frame(initBuf, sizeof(initBuf), true);
     // Start the application timer. Time has to be in microseconds
     // appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
@@ -103,7 +103,7 @@ void lorawan_rx_handler(lmh_app_data_t* app_data) {
     Serial.println("Downlink processing succcessful");
     printSummary();
   } else {
-    Serial.println("Unkown or invalid command");
+    Serial.println("Unknown or invalid command");
   }
 }
 
@@ -117,10 +117,15 @@ void lorawan_confirm_class_handler(DeviceClass_t Class) {
 
 void lorawan_unconf_finished(void) {
   Serial.println("TX finished");
+  linkCheckCount++;
 }
 
 void lorawan_conf_finished(bool result) {
   Serial.printf("Confirmed TX %s\n", result ? "success" : "failed");
+  if (!result) {
+    setReboot = true;
+  }
+  linkCheckCount = 0;
 }
 
 /* Send LoRaWAN payload */

@@ -20,8 +20,6 @@ int baseBaudIndex = INITIAL_BAUD_INDEX;
 /// Loaded OBIS codes
 CodeString codes[CODES_LIMIT + 1];
 
-// Reboot value
-extern bool setReboot;
 
 const char* defaultCodes[] = {
   "128.8.11",
