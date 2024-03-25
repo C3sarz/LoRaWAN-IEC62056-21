@@ -15,10 +15,71 @@ unsigned long periodResult;
 
 // Watchdog and reset variables
 volatile bool setReboot = false;
-unsigned long lastWatchdogReset = millis();
 
 // Link check variables
-volatile uint linkCheckCount = 0;
+volatile uint linkCheckCount = 100;
+
+//==================================================================
+//==================================================================
+//==================================================================
+//==================================================================
+#if ( defined(ARDUINO_NANO_RP2040_CONNECT) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \ 
+       defined(ARDUINO_GENERIC_RP2040) ) && defined(ARDUINO_ARCH_MBED) 
+   #define USING_MBED_RPI_PICO_TIMER_INTERRUPT        true 
+ #else 
+   #error This code is intended to run on the MBED RASPBERRY_PI_PICO platform! Please check your Tools->Board setting. 
+ #endif 
+  
+ // These define's must be placed at the beginning before #include "TimerInterrupt_Generic.h" 
+ // _TIMERINTERRUPT_LOGLEVEL_ from 0 to 4 
+ #define _TIMERINTERRUPT_LOGLEVEL_     4 
+  
+ // To be included only in main(), .ino with setup() to avoid `Multiple Definitions` Linker Error 
+ #include "MBED_RPi_Pico_TimerInterrupt.h" 
+  
+ // To be included only in main(), .ino with setup() to avoid `Multiple Definitions` Linker Error 
+ #include "MBED_RPi_Pico_ISR_Timer.h" 
+  
+  
+ // Init MBED_RPI_PICO_Timer 
+ MBED_RPI_PICO_Timer ITimer1(1); 
+ MBED_RPI_PICO_ISRTimer ISR_timer; 
+#define TIMER_INTERVAL_MS            1000L 
+  
+  
+ // Never use Serial.print inside this mbed ISR. Will hang the system 
+ void TimerHandler(uint alarm_num) 
+ { 
+   static bool toggle  = false; 
+   static int timeRun  = 0;
+  
+   /////////////////////////////////////////////////////////// 
+   // Always call this for MBED RP2040 before processing ISR 
+   TIMER_ISR_START(alarm_num); 
+   /////////////////////////////////////////////////////////// 
+  
+   ISR_timer.run(); 
+  
+   if ((++timeRun == (TIMER_INTERVAL_MS && !setReboot)))  
+   { 
+     timeRun = 0; 
+  
+     //timer interrupt toggles pin LED_BUILTIN 
+     digitalWrite(LED_BUILTIN, toggle); 
+     watchdog_update();
+     toggle = !toggle;
+   } 
+  
+   //////////////////////////////////////////////////////////// 
+   // Always call this for MBED RP2040 after processing ISR 
+   TIMER_ISR_END(alarm_num); 
+   //////////////////////////////////////////////////////////// 
+ } 
+
+//==================================================================
+//==================================================================
+//==================================================================
+//==================================================================
 
 void setup() {
 
@@ -40,8 +101,7 @@ void setup() {
   }
 
   // Watchdog Init
-  // watchdog_enable(5000, false);
-  lastWatchdogReset = millis();
+  watchdog_enable(5000, false);
 
   // Read config from flash
   if (!readFromStorage()) {
@@ -63,6 +123,13 @@ void setup() {
   Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_MAX);
   // printSummary();
+
+  if (ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS * 1000, TimerHandler)) 
+   { 
+     Serial.print(F("Starting ITimer1 OK, millis() = ")); Serial.println(millis()); 
+   } 
+   else 
+     Serial.println(F("Can't set ITimer1. Select another freq. or timer")); 
 }
 
 void loop() {
@@ -120,9 +187,5 @@ void loop() {
     periodResult = uplinkPeriod + random(0, RANDOM_TIME_MAX);
     lastRequest = millis();
   }
-
-  if (!setReboot && (millis() - lastWatchdogReset > 1000)) {
-    watchdog_update();
-    lastWatchdogReset = millis();
-  }
 }
+

@@ -1,13 +1,12 @@
-#include "LoRaWAN_Handler.h"
 
-using namespace std::chrono_literals;
-using namespace std::chrono;
+#include "LoRaWAN_Handler.h"
 
 bool doOTAA = true;                                     /**< Number of trials for the join request. */
 DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
 LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
 lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
 uint8_t gAppPort = 1;                                   /* data port*/
+volatile bool joined = false;
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
@@ -32,6 +31,11 @@ static lmh_app_data_t m_lora_app_data = { m_lora_app_data_buffer, 0, 0, 0, 0 }; 
 static uint32_t count = 0;
 static uint32_t count_fail = 0;
 
+
+// void timerTest(void) {
+//   appTimer.attach(timerTest, (std::chrono::microseconds)(20000 * 1000));
+//   Serial.println("TIMER!");
+// }
 
 // LoRaWAN Hardware and Software setup
 bool setupLoRaWAN() {
@@ -70,17 +74,17 @@ bool setupLoRaWAN() {
 */
 void lorawan_has_joined_handler(void) {
 
-  Serial.println("OTAA Mode, Network Joined!");
-  digitalWrite(PIN_LED2, 0);
-
-  lmh_error_status ret = lmh_class_request(g_CurrentClass);
-  if (ret == LMH_SUCCESS) {
-    delay(5000);
-    byte initBuf[] = { 0xAA, 0x01 };
-    send_lora_frame(initBuf, sizeof(initBuf), true);
-    // Start the application timer. Time has to be in microseconds
-    // appTimer.attach(tx_lora_periodic_handler, (std::chrono::microseconds)(LORAWAN_APP_INTERVAL * 1000));
-  } else {
+  if (!joined) {
+    joined = true;
+    Serial.println("OTAA Mode, Network Joined!");
+    digitalWrite(PIN_LED2, 0);
+    lmh_error_status ret = lmh_class_request(g_CurrentClass);
+    if (ret == LMH_SUCCESS) {
+      delay(30000);
+      byte initBuf[] = { 0xAA, 0x01 };
+      send_lora_frame(initBuf, sizeof(initBuf), true);
+    } else {
+    }
   }
 }
 /**@brief LoRa function for handling OTAA join failed

@@ -15,7 +15,7 @@ const char defaultDeviceAddress[] = "";
 unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
 
 /// Base baud rate index
-int baseBaudIndex = INITIAL_BAUD_INDEX;
+int currentBaudIndex = INITIAL_BAUD_INDEX;
 
 /// Loaded OBIS codes
 CodeString codes[CODES_LIMIT + 1];
@@ -36,7 +36,7 @@ const char* defaultCodes[] = {
   "15.8.0",
   "15.6.0",
   "13.5.0",
-  "",
+  "15.8.0*02",
   ""
 };
 
@@ -45,7 +45,7 @@ const char* defaultCodes[] = {
 */
 void loadDefaultValues() {
   uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
-  baseBaudIndex = INITIAL_BAUD_INDEX;
+  currentBaudIndex = INITIAL_BAUD_INDEX;
   strcpy(deviceAddress, defaultDeviceAddress);
   for (int i = 0; i < CODES_LIMIT; i++) {
     memset(codes[i], 0, STRING_MAX_SIZE);
@@ -71,8 +71,8 @@ bool dataHasChanged() {
   currentAddrOffset++;
 
   // Compare baud index
-  if (*(DATA_BASE + currentAddrOffset) != baseBaudIndex) {
-    Serial.printf("O: %u, N: %u\r\n", *(DATA_BASE + currentAddrOffset), baseBaudIndex);
+  if (*(DATA_BASE + currentAddrOffset) != currentBaudIndex) {
+    Serial.printf("O: %u, N: %u\r\n", *(DATA_BASE + currentAddrOffset), currentBaudIndex);
     return true;
   }
   currentAddrOffset++;
@@ -115,7 +115,7 @@ bool writeToStorage() {
   byte uplinkMinutes = static_cast<byte>(uplinkPeriod / MS_TO_M);
   unsigned int currentAddrOffset = 2;
   memcpy(storageBuffer, &uplinkMinutes, 1);
-  memcpy(storageBuffer + 1, &baseBaudIndex, 1);
+  memcpy(storageBuffer + 1, &currentBaudIndex, 1);
   memcpy(storageBuffer + currentAddrOffset, deviceAddress, STRING_MAX_SIZE);
   currentAddrOffset += STRING_MAX_SIZE;
   for (int i = 0; i < CODES_LIMIT; i++) {
@@ -142,7 +142,7 @@ bool readFromStorage() {
   uplinkPeriod = uplinkMinutes * MS_TO_M;
   currentAddrOffset++;
 
-  memcpy(&baseBaudIndex, DATA_BASE + currentAddrOffset, 1);
+  memcpy(&currentBaudIndex, DATA_BASE + currentAddrOffset, 1);
   currentAddrOffset++;
 
   memcpy(deviceAddress, DATA_BASE + currentAddrOffset, STRING_MAX_SIZE);
@@ -182,7 +182,7 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
   else if (opcode == CHANGE_SERIAL_BAUD && parameter < 7) {
     if (changeBaud(parameter)) {
       Serial.printf("Baud changed to %u", parameter);
-      baseBaudIndex = parameter;
+      currentBaudIndex = parameter;
     }
     return true;
   }
@@ -233,7 +233,7 @@ void printSummary() {
     Serial.printf("Code #%d: \"%s\"\r\n", i, codes[i]);
   }
   Serial.printf("Device Address: %s\r\n", deviceAddress);
-  Serial.printf("Baud speed index: %u\r\n", baseBaudIndex);
+  Serial.printf("Baud speed index: %u\r\n", currentBaudIndex);
   Serial.printf("Device will report every %lu minutes.\r\n", uplinkPeriod / MS_TO_M);
   Serial.println("=========");
 }

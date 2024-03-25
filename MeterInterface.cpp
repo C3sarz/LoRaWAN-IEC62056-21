@@ -10,7 +10,7 @@ void initMeterInterface() {
   digitalWrite(WB_IO2, HIGH);
   RS485.setPins(RS485_TX_PIN, RS485_DE_PIN, RS485_RE_PIN);
   RS485.setTimeout(RS485_TIMEOUT);
-  RS485.begin(ClassCMeterBaudRates[baseBaudIndex], RS485_SERIAL_CONFIG);
+  RS485.begin(ClassCMeterBaudRates[currentBaudIndex], RS485_SERIAL_CONFIG);
   RS485.receive();
 }
 
@@ -23,12 +23,14 @@ bool changeBaud(int newBaudIndex) {
   }
 
   // No change
-  if (newBaudIndex == baseBaudIndex) {
+  if (newBaudIndex == currentBaudIndex) {
     return false;
   }
 
   // Set up new baud rate
+  currentBaudIndex = newBaudIndex;
   int newBaud = ClassCMeterBaudRates[newBaudIndex];
+  Serial.printf("===Available: %d\r\n", RS485.availableForWrite());
   RS485.noReceive();
   RS485.end();
   RS485.begin(newBaud, RS485_SERIAL_CONFIG);
@@ -76,19 +78,16 @@ bool isHandshakeResponse() {
     result = idPtr[4] - '0';
     if (result <= 6 && result >= 0) {
       baudFound = true;
-      // result = 0; //debug
     }
   }
 
-  // Found baud rate in message contents
-  if (baudFound) {
-    Serial.printf("Found baud index %d in reply.\r\n", result);
-  }
   // ACK baud rate and change it
   if (baudFound && NEGOTIATE_BAUD) {
     Serial.printf("Will ACK for baud %d\r\n", ClassCMeterBaudRates[result]);
-    // delay(300);
     sendBaudAck(result);
+
+    // Message gets corrupted without the delay
+    delay(100);
     changeBaud(result);
   }
 
@@ -96,6 +95,7 @@ bool isHandshakeResponse() {
   else {
     sendBaudAck(INITIAL_BAUD_INDEX);
   }
+
   return true;
 }
 
@@ -104,7 +104,6 @@ void processRS485() {
   int availableBytes = RS485.available();
   if (availableBytes) {
     unsigned int dataLen = 0;
-
     // Handshake was successful and now we expect a data packet
     if (expectData) {
       Packet packet;
@@ -123,7 +122,7 @@ void processRS485() {
         int res = assemblePacket(sendBuf, 100, packet);
 
         int sendError = -1;
-        if (linkCheckCount > CONFIRMED_COUNT) {
+        if (linkCheckCount >= CONFIRMED_COUNT) {
           sendError = send_lora_frame(sendBuf, res, true);
         } else {
           sendError = send_lora_frame(sendBuf, res, false);
@@ -143,15 +142,17 @@ void processRS485() {
         Serial.println("Error parsing the data recieved.");
       }
       RS485.flush();
-      if (changeBaud(baseBaudIndex)) {
-        Serial.printf("Reset baud to %d.\r\n", ClassCMeterBaudRates[baseBaudIndex]);
+      if (changeBaud(INITIAL_BAUD_INDEX)) {
+        Serial.printf("Reset baud to %d.\r\n", ClassCMeterBaudRates[INITIAL_BAUD_INDEX]);
       }
       expectData = false;
     }
 
     // Not expecting data, probably expecting the handshake response
     else {
+      // dataLen = RS485.readBytesUntil(0x0D, dataBuf, sizeof(dataBuf));
       dataLen = RS485.readBytes(dataBuf, sizeof(dataBuf));
+
       dataBuf[dataLen] = '\0';
       for (unsigned int i = 0; i < dataLen; i++) {
         Serial.printf("%c", dataBuf[i]);
