@@ -9,15 +9,12 @@
 #define _STORAGE_HANDLER_
 
 #include <Arduino.h>
+#include "config.h"
 extern "C" {
 #include <hardware/flash.h>
 };
 
 #define STRING_MAX_SIZE 16
-#define CONFIRMED_COUNT 100
-#define INITIAL_BAUD_INDEX 0
-#define INITIAL_PERIOD_MINUTES 1
-#define CODES_LIMIT 16
 #define HEADER_LENGTH 3
 #define STORAGE_SIZE 2 + STRING_MAX_SIZE + (STRING_MAX_SIZE * CODES_LIMIT)
 #define STORAGE_FLASH_OFFSET PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE  // last sector in flash

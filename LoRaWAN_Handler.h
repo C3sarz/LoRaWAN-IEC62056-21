@@ -8,16 +8,14 @@
 #include <stdio.h>
 #include "mbed.h"
 #include "rtos.h"
+#include "MeterInterface.h"
+#include "Peripherals.h"
 
 #define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE /**< Maximum size of scheduler events. */
-#define SCHED_QUEUE_SIZE 60                                       /**< Maximum number of events in the scheduler queue. */
-#define LORAWAN_DATARATE DR_3                                     /*LoRaMac datarates definition, from DR_0 to DR_5*/
-#define LORAWAN_TX_POWER TX_POWER_0                              /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
+#define SCHED_QUEUE_SIZE 60 /**< Maximum number of events in the scheduler queue. */
+#define LORAWAN_TX_POWER TX_POWER_0 /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3
 #define RANDOM_TIME_MAX 10000
-#define ADR_MODE LORAWAN_ADR_OFF
-#define CHANNEL_MASK 2 /* Channels 8-15, (Milesight default) */
-#define LORAWAN_APP_DATA_BUFF_SIZE 100 /**< buffer size of the data to be transmitted. */
 
 enum LoRaWAN_Send_Status {
   SEND_OK,
@@ -26,6 +24,10 @@ enum LoRaWAN_Send_Status {
   NOT_JOINED,
 };
 
+// LoRaWAN Keys
+extern uint8_t nodeDeviceEUI[8];
+extern uint8_t nodeAppEUI[8];
+extern uint8_t nodeAppKey[16];
 
 // Function Prototypes
 void lorawan_has_joined_handler(void);

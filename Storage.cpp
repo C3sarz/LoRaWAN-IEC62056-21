@@ -15,7 +15,7 @@ const char defaultDeviceAddress[] = "";
 unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
 
 /// Base baud rate index
-int currentBaudIndex = INITIAL_BAUD_INDEX;
+int currentBaudIndex = DEFAULT_BAUD_INDEX;
 
 /// Loaded OBIS codes
 CodeString codes[CODES_LIMIT + 1];
@@ -45,7 +45,7 @@ const char* defaultCodes[] = {
 */
 void loadDefaultValues() {
   uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
-  currentBaudIndex = INITIAL_BAUD_INDEX;
+  currentBaudIndex = DEFAULT_BAUD_INDEX;
   strcpy(deviceAddress, defaultDeviceAddress);
   for (int i = 0; i < CODES_LIMIT; i++) {
     memset(codes[i], 0, STRING_MAX_SIZE);

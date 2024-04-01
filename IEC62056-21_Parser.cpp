@@ -1,41 +1,5 @@
+#include <cstring>
 #include "IEC62056-21_Parser.h"
-
-byte assemblePacket(byte* resultBuffer, int maxLen, Packet packet) {
-  int packetLen = 0;
-
-  if (!(packet.itemPresentMask)) {
-    return 0;
-  }
-
-  // Command
-  resultBuffer[packetLen++] = 0x01;
-
-  // Add present values indicator to packet.
-  // Copy byte for byte reversing endianess.
-  for (unsigned int i = 0; i < sizeof(packet.itemPresentMask); i++) {
-    resultBuffer[packetLen++] = (packet.itemPresentMask >> 8 * (sizeof(packet.itemPresentMask) - 1 - i)) & 0xFF;
-  }
-
-  // Add decimals count mask.
-  uint32_t decimals = getDecimalCountMask(packet.decimalPoints);
-  // Copy byte for byte reversing endianess.
-  for (unsigned int i = 0; i < sizeof(decimals); i++) {
-    resultBuffer[packetLen++] = (decimals >> 8 * (sizeof(decimals) - 1 - i)) & 0xFF;
-  }
-
-  // Add values (if found).
-  uint16_t presentValues = packet.itemPresentMask;
-  for (int item = 0; item < CODES_LIMIT; item++) {
-    if (presentValues & 0x01) {
-      // Copy byte for byte reversing endianess.
-      for (unsigned int i = 0; i < sizeof(packet.values[0]); i++) {
-        resultBuffer[packetLen++] = (packet.values[item] >> 8 * (sizeof(packet.values[0]) - 1 - i)) & 0xFF;
-      }
-    }
-    presentValues = presentValues >> 1;
-  }
-  return packetLen;
-}
 
 bool isQueriedCode(char* code, int* codeIndex) {
   for (int i = 0; i < CODES_LIMIT && codes[i] != NULL; i++) {
@@ -47,8 +11,85 @@ bool isQueriedCode(char* code, int* codeIndex) {
   return false;
 }
 
-// Parses the IEC 62056-21 data DESTRUCTIVELY, and saves relevant values if found.
-bool parseData(char buffer[], int len, Packet* packetPtr) {
+
+bool parseDataString(char dataStr[], int len, ParsedDataObject* dataPtr) {
+
+  char* idStringPtr;
+  char* dataStartPtr;
+  char* dataBlockEndPtr;
+
+  Serial.printf("-------------------\r\nLine: %s\r\n", dataStr);
+  idStringPtr = strchr(dataStr, ':');
+  dataStartPtr = strchr(dataStr, '(');
+  dataBlockEndPtr = strchr(dataStr, ')');
+  if (idStringPtr == NULL || dataStartPtr == NULL || dataBlockEndPtr == NULL) {
+    return false;
+  }
+
+  // Check for units separator (value*units)
+  char* valueEndPtr = strchr(dataStartPtr, '*');
+  if (valueEndPtr != NULL) {
+    dataBlockEndPtr = valueEndPtr;
+  }
+
+  // Modify string
+  dataStartPtr[0] = '\0';
+  dataBlockEndPtr[0] = '\0';
+  idStringPtr++;
+  dataStartPtr++;
+
+  int valueIndex;
+  if (isQueriedCode(idStringPtr, &valueIndex)) {
+    Serial.println("================== CODE FOUND ===================");
+    Serial.printf("Code: %s\r\n", idStringPtr);
+    Serial.printf("Data: %s\r\n", dataStartPtr);
+    saveNumericalValue(dataStartPtr, valueIndex, dataPtr);
+    return true;
+  }
+  return false;
+}
+
+// Parses the IEC 62056-21 data block DESTRUCTIVELY, and saves relevant values if found.
+bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
+
+
+  // String processing pointers
+  char* nextItem;
+  char* currentItem = buffer;
+
+  // Counters
+  unsigned int count = 0;
+  unsigned int foundCount = 0;
+
+  // Set starting position
+  nextItem = strchr(currentItem, '\n');
+  if (nextItem == NULL) {
+    return false;
+  }
+
+  // Iterate throughout data block
+  while (nextItem != NULL) {
+    nextItem[0] = '\0';
+    count++;
+    Serial.printf("-------------------\r\nLine: %s\r\n", currentItem);
+    if(parseDataString(currentItem,strlen(currentItem),dataPtr)){
+      foundCount++;
+    }
+
+    currentItem = nextItem + 1;
+    nextItem = strchr(nextItem + 1, '\n');
+  }
+  // DEBUG
+  Serial.printf("Finished parsing %u lines.\r\n", count);
+  for (int i = 0; i < CODES_LIMIT; i++) {
+    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, dataPtr->values[i], dataPtr->decimalPoints[i]);
+  }
+
+  return foundCount > 0;
+}
+
+// Parses the IEC 62056-21 data block DESTRUCTIVELY, and saves relevant values if found.
+bool parseDataBlockOld(char buffer[], int len, ParsedDataObject* dataPtr) {
   unsigned int count = 0;
 
   // String processing pointers
@@ -62,7 +103,6 @@ bool parseData(char buffer[], int len, Packet* packetPtr) {
   if (nextItem == NULL) {
     return false;
   }
-  Serial.println("Parsing test..");
 
   while (nextItem != NULL) {
     nextItem[0] = '\0';
@@ -92,7 +132,7 @@ bool parseData(char buffer[], int len, Packet* packetPtr) {
       Serial.println("================== CODE FOUND ===================");
       Serial.printf("Code: %s\r\n", idStringPtr);
       Serial.printf("Data: %s\r\n", dataStartPtr);
-      saveNumericalValue(dataStartPtr, valueIndex, packetPtr);
+      saveNumericalValue(dataStartPtr, valueIndex, dataPtr);
     }
 
     currentItem = nextItem + 1;
@@ -101,12 +141,12 @@ bool parseData(char buffer[], int len, Packet* packetPtr) {
   // DEBUG
   Serial.printf("Finished parsing %u lines.\r\n", count);
   for (int i = 0; i < CODES_LIMIT; i++) {
-    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, packetPtr->values[i], packetPtr->decimalPoints[i]);
+    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, dataPtr->values[i], dataPtr->decimalPoints[i]);
   }
 
 
   // No codes found
-  if (packetPtr->itemPresentMask <= 0) {
+  if (dataPtr->itemPresentMask <= 0) {
     Serial.println("No codes found!");
     return false;
   }
@@ -137,19 +177,19 @@ uint32_t getDecimalCountMask(byte decimals[]) {
 /* Removes decimal point from value, transforming it into an INT, and saves it for TX.
    Also saves the decimal place count, and marks the item as present in the mask.
 */
-void saveNumericalValue(char* valueStr, int position, Packet* packetPtr) {
+void saveNumericalValue(char* valueStr, int position, ParsedDataObject* dataPtr) {
   char* decimalCharPtr = strchr(valueStr, '.');
   if (decimalCharPtr != NULL) {
     for (unsigned int i = 0; i < strlen(decimalCharPtr); i++) {
       decimalCharPtr[i] = decimalCharPtr[i + 1];
     }
-    packetPtr->decimalPoints[position] = strlen(decimalCharPtr);
+    dataPtr->decimalPoints[position] = strlen(decimalCharPtr);
   } else {
-    packetPtr->decimalPoints[position] = 0;
+    dataPtr->decimalPoints[position] = 0;
   }
   Serial.printf("Mask for %d: %x\r\n", position, getPositionMask(position));
-  packetPtr->itemPresentMask |= getPositionMask(position);
-  packetPtr->values[position] = atol(valueStr);
+  dataPtr->itemPresentMask |= getPositionMask(position);
+  dataPtr->values[position] = atol(valueStr);
   Serial.printf("StrVal: %s, Val: %d\r\n", valueStr, atol(valueStr));
   return;
 }

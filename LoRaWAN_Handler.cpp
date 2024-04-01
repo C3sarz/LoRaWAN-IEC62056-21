@@ -1,12 +1,11 @@
-
 #include "LoRaWAN_Handler.h"
+#include <Arduino.h>
 
-bool doOTAA = true;                                     /**< Number of trials for the join request. */
+bool doOTAA = true;
 DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
 LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
 lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
 uint8_t gAppPort = 1;                                   /* data port*/
-volatile bool joined = false;
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
@@ -21,21 +20,17 @@ static lmh_callback_t g_lora_callbacks = { BoardGetBatteryLevel, BoardGetUniqueI
                                            lorawan_unconf_finished, lorawan_conf_finished };
 //OTAA keys !!!! KEYS ARE MSB !!!!
 // AC1F09FFFE05159C
-uint8_t nodeDeviceEUI[8] = { 0xAC, 0x1F, 0x09, 0xFF, 0xFE, 0x05, 0x15, 0x9B };
-uint8_t nodeAppEUI[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-uint8_t nodeAppKey[16] = { 0x55, 0x72, 0x40, 0x4C, 0x69, 0x6E, 0x6B, 0x4C, 0x6F, 0x52, 0x61, 0x32, 0x30, 0x31, 0x38, 0x23 };
+// uint8_t nodeDeviceEUI[8] = { 0xAC, 0x1F, 0x09, 0xFF, 0xFE, 0x05, 0x15, 0x9B };
+// uint8_t nodeAppEUI[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+// uint8_t nodeAppKey[16] = { 0x55, 0x72, 0x40, 0x4C, 0x69, 0x6E, 0x6B, 0x4C, 0x6F, 0x52, 0x61, 0x32, 0x30, 0x31, 0x38, 0x23 };
+
+
 
 static uint8_t m_lora_app_data_buffer[LORAWAN_APP_DATA_BUFF_SIZE];               //< Lora user application data buffer.
 static lmh_app_data_t m_lora_app_data = { m_lora_app_data_buffer, 0, 0, 0, 0 };  //< Lora user application data structure.
 
 static uint32_t count = 0;
 static uint32_t count_fail = 0;
-
-
-// void timerTest(void) {
-//   appTimer.attach(timerTest, (std::chrono::microseconds)(20000 * 1000));
-//   Serial.println("TIMER!");
-// }
 
 // LoRaWAN Hardware and Software setup
 bool setupLoRaWAN() {
@@ -64,7 +59,7 @@ bool setupLoRaWAN() {
   // Start Join procedure
   lmh_join();
   Serial.print("Setup finished for ");
-  for (int i = 0; i < sizeof(nodeDeviceEUI); i++) {
+  for (unsigned int i = 0; i < sizeof(nodeDeviceEUI); i++) {
     Serial.printf("0x%02hhx ", nodeDeviceEUI[i]);
   }
   return true;
@@ -72,8 +67,14 @@ bool setupLoRaWAN() {
 
 /**@brief LoRa function for handling HasJoined event.
 */
-void lorawan_has_joined_handler(void) {
+// uint8_t BoardGetBatteryLevel(void) {
+//   return 254;
+// }
 
+/**@brief LoRa function for handling HasJoined event.
+*/
+void lorawan_has_joined_handler(void) {
+  static bool joined = false;
   if (!joined) {
     joined = true;
     Serial.println("OTAA Mode, Network Joined!");
@@ -81,8 +82,11 @@ void lorawan_has_joined_handler(void) {
     lmh_error_status ret = lmh_class_request(g_CurrentClass);
     if (ret == LMH_SUCCESS) {
       delay(30000);
-      byte initBuf[] = { 0xAA, 0x01 };
-      send_lora_frame(initBuf, sizeof(initBuf), true);
+
+      byte data[10];
+      byte len = assembleInitPacket(data);
+      send_lora_frame(data, len, true);
+
     } else {
     }
   }
@@ -107,29 +111,37 @@ void lorawan_rx_handler(lmh_app_data_t* app_data) {
     Serial.println("Downlink processing succcessful");
     printSummary();
   } else {
-    Serial.println("Unknown or invalid command");
+    Serial.println("Unknown or invalid downlink command");
   }
 }
 
+// LoRaWAN device type switch handler
 void lorawan_confirm_class_handler(DeviceClass_t Class) {
   Serial.printf("switch to class %c done\n", "ABC"[Class]);
-  // Informs the server that switch has occurred ASAP
   m_lora_app_data.buffsize = 0;
   m_lora_app_data.port = gAppPort;
   lmh_send(&m_lora_app_data, g_CurrentConfirm);
 }
 
+// Unconfirmed finished CALLBACK
 void lorawan_unconf_finished(void) {
   Serial.println("TX finished");
   linkCheckCount++;
 }
 
+// Confirmed finished CALLBACK
 void lorawan_conf_finished(bool result) {
   Serial.printf("Confirmed TX %s\n", result ? "success" : "failed");
+  static byte failCount = 0;
   if (!result) {
-    setReboot = true;
+    failCount++;
+    if (failCount > 3) {
+      setReboot = true;
+    }
+  } else {
+    linkCheckCount = 0;
+    failCount = 0;
   }
-  linkCheckCount = 0;
 }
 
 /* Send LoRaWAN payload */
@@ -156,14 +168,28 @@ LoRaWAN_Send_Status send_lora_frame(byte* sendBuffer, int bufferLen, bool confir
 
   // Send packet
   lmh_error_status error = lmh_send(&m_lora_app_data, confirmType);
-  Serial.println("sent..");
-  if (error == LMH_SUCCESS) {
-    count++;
-    Serial.printf("lmh_send enqueued count %d\n", count);
-    return SEND_OK;
-  } else {
-    count_fail++;
-    Serial.printf("lmh_send fail, R:%d, count %d\n", error, count_fail);
-    return SEND_FAILED;
+  LoRaWAN_Send_Status result;
+  switch (error) {
+    case LMH_SUCCESS:
+      count++;
+      Serial.printf("lmh_send enqueued count %d\n", count);
+      result = SEND_OK;
+      break;
+    case LMH_ERROR:
+      count_fail++;
+      Serial.printf("lmh_send fail, Error:%d, fail count %d\n", error, count_fail);
+      result = SEND_FAILED;
+      break;
+    case LMH_BUSY:
+      count_fail++;
+      Serial.printf("lmh_send busy, Error:%d, fail count %d\n", error, count_fail);
+      result = SEND_FAILED;
+      break;
+    default:
+      count_fail++;
+      Serial.printf("lmh_send unknown error, Error:%d, fail count %d\n", error, count_fail);
+      result = SEND_FAILED;
+      break;
   }
+  return result;
 }
