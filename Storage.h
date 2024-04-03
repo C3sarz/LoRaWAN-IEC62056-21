@@ -19,7 +19,7 @@ extern "C" {
 #define STORAGE_SIZE 2 + STRING_MAX_SIZE + (STRING_MAX_SIZE * CODES_LIMIT)
 #define STORAGE_FLASH_OFFSET PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE  // last sector in flash
 
-const unsigned long MS_TO_M = 1000 * 60;
+const unsigned long MINUTE_IN_MS = 1000 * 60;
 typedef char CodeString[STRING_MAX_SIZE];
 
 // Globals

@@ -12,7 +12,7 @@ char deviceAddress[STRING_MAX_SIZE] = "";
 const char defaultDeviceAddress[] = "";
 
 /// Device UPLINK period in milliseconds
-unsigned long uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
+unsigned long uplinkPeriod = MINUTE_IN_MS * INITIAL_PERIOD_MINUTES;
 
 /// Base baud rate index
 int currentBaudIndex = DEFAULT_BAUD_INDEX;
@@ -44,7 +44,7 @@ const char* defaultCodes[] = {
   Load default device parameters (saved as constants in code).
 */
 void loadDefaultValues() {
-  uplinkPeriod = MS_TO_M * INITIAL_PERIOD_MINUTES;
+  uplinkPeriod = MINUTE_IN_MS * INITIAL_PERIOD_MINUTES;
   currentBaudIndex = DEFAULT_BAUD_INDEX;
   strcpy(deviceAddress, defaultDeviceAddress);
   for (int i = 0; i < CODES_LIMIT; i++) {
@@ -64,8 +64,8 @@ bool dataHasChanged() {
   unsigned int currentAddrOffset = 0;
 
   // Compare uplink period
-  if (*DATA_BASE != static_cast<byte>(uplinkPeriod / MS_TO_M)) {
-    Serial.printf("O: %u, N: %u\r\n", *DATA_BASE, static_cast<byte>(uplinkPeriod / MS_TO_M));
+  if (*DATA_BASE != static_cast<byte>(uplinkPeriod / MINUTE_IN_MS)) {
+    Serial.printf("O: %u, N: %u\r\n", *DATA_BASE, static_cast<byte>(uplinkPeriod / MINUTE_IN_MS));
     return true;
   }
   currentAddrOffset++;
@@ -112,7 +112,7 @@ bool writeToStorage() {
 
   // Serialize data
   byte storageBuffer[STORAGE_SIZE];
-  byte uplinkMinutes = static_cast<byte>(uplinkPeriod / MS_TO_M);
+  byte uplinkMinutes = static_cast<byte>(uplinkPeriod / MINUTE_IN_MS);
   unsigned int currentAddrOffset = 2;
   memcpy(storageBuffer, &uplinkMinutes, 1);
   memcpy(storageBuffer + 1, &currentBaudIndex, 1);
@@ -139,7 +139,7 @@ bool readFromStorage() {
 
   byte uplinkMinutes = INITIAL_PERIOD_MINUTES;
   memcpy(&uplinkMinutes, DATA_BASE, 1);
-  uplinkPeriod = uplinkMinutes * MS_TO_M;
+  uplinkPeriod = uplinkMinutes * MINUTE_IN_MS;
   currentAddrOffset++;
 
   memcpy(&currentBaudIndex, DATA_BASE + currentAddrOffset, 1);
@@ -174,7 +174,7 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
 
   // Update Tx Period in minutes
   if (opcode == UPDATE_PERIOD && parameter > 0) {
-    uplinkPeriod = MS_TO_M * parameter;
+    uplinkPeriod = MINUTE_IN_MS * parameter;
     return true;
   }
 
@@ -234,6 +234,6 @@ void printSummary() {
   }
   Serial.printf("Device Address: %s\r\n", deviceAddress);
   Serial.printf("Baud speed index: %u\r\n", currentBaudIndex);
-  Serial.printf("Device will report every %lu minutes.\r\n", uplinkPeriod / MS_TO_M);
+  Serial.printf("Device will report every %lu minutes.\r\n", uplinkPeriod / MINUTE_IN_MS);
   Serial.println("=========");
 }

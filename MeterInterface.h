@@ -12,8 +12,8 @@
 #define RS485_RE_PIN 1
 #define NEGOTIATE_BAUD 1
 #define RS485_SERIAL_CONFIG SERIAL_7E1
-#define RS485_TIMEOUT 50
-#define TRANSMISSION_BUFFER_SIZE 5000
+#define RS485_TIMEOUT 200
+#define UART_BUFFER_SIZE 5000
 #define STATUSPACKETCOUNT 10
 
 // IEC 62056-21 Mode C serial baud rates
@@ -39,7 +39,6 @@ enum Error_Type {
   TIMEOUT,
 };
 
-const char NOADDRESS[] = "";
 extern int currentBaudIndex;
 
 void initMeterInterface();
@@ -51,6 +50,6 @@ byte assembleInitPacket(byte* dataPtr);
 bool changeBaud(int newBaudIndex);
 void sendAck(int baudIndex);
 void sendQuery(const char address[]);
-bool isHandshakeResponse();
+bool isHandshakeResponse(int* newBaud);
 
 #endif

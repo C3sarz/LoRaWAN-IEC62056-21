@@ -52,7 +52,6 @@ bool parseDataString(char dataStr[], int len, ParsedDataObject* dataPtr) {
 // Parses the IEC 62056-21 data block DESTRUCTIVELY, and saves relevant values if found.
 bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
 
-
   // String processing pointers
   char* nextItem;
   char* currentItem = buffer;

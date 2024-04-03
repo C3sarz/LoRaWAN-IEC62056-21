@@ -10,7 +10,7 @@
 #define VBAT_DIVIDER_COMP (1.846F)      //  // Compensation factor for the VBAT divider
 #define REAL_VBAT_MV_PER_LSB (VBAT_DIVIDER_COMP * VBAT_MV_PER_LSB)
 
-uint16_t getBatteryInt(void);
-float readVBAT(void);
+uint16_t getVBatInt(void);
+float readVBatFloat(void);
 
 #endif

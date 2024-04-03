@@ -4,10 +4,7 @@
 #include <Arduino.h>
 #include "Storage.h"
 #include "LoRaWan-Arduino.h"  //http://librarymanager/All#SX126x
-#include <SPI.h>
 #include <stdio.h>
-#include "mbed.h"
-#include "rtos.h"
 #include "MeterInterface.h"
 #include "Peripherals.h"
 
@@ -30,6 +27,7 @@ extern uint8_t nodeAppEUI[8];
 extern uint8_t nodeAppKey[16];
 
 // Function Prototypes
+uint8_t lorawan_get_battery_level(void);
 void lorawan_has_joined_handler(void);
 void lorawan_join_failed_handler(void);
 void lorawan_rx_handler(lmh_app_data_t* app_data);

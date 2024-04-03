@@ -14,7 +14,7 @@ static lmh_param_t g_lora_param_init = { ADR_MODE, LORAWAN_DATARATE, LORAWAN_PUB
 
 /**@brief Structure containing LoRaWan callback functions, needed for lmh_init()
 */
-static lmh_callback_t g_lora_callbacks = { BoardGetBatteryLevel, BoardGetUniqueId, BoardGetRandomSeed,
+static lmh_callback_t g_lora_callbacks = { lorawan_get_battery_level, BoardGetUniqueId, BoardGetRandomSeed,
                                            lorawan_rx_handler, lorawan_has_joined_handler,
                                            lorawan_confirm_class_handler, lorawan_join_failed_handler,
                                            lorawan_unconf_finished, lorawan_conf_finished };
@@ -67,9 +67,10 @@ bool setupLoRaWAN() {
 
 /**@brief LoRa function for handling HasJoined event.
 */
-// uint8_t BoardGetBatteryLevel(void) {
-//   return 254;
-// }
+uint8_t lorawan_get_battery_level(void) {
+  // uint16_t vbat = getVBatInt();
+  return 254;
+}
 
 /**@brief LoRa function for handling HasJoined event.
 */
