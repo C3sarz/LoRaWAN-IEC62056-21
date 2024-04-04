@@ -6,9 +6,10 @@
 #define BATTERY_INSTALLED 1
 #define CONFIRMED_COUNT 30
 
-// RS485 config
+// Storage config
 #define INITIAL_PERIOD_MINUTES 1
 #define CODES_LIMIT 16
+#define STRING_MAX_SIZE 16
 #define DEFAULT_BAUD_INDEX 0
 
 // LoRa & LoRaWAN config

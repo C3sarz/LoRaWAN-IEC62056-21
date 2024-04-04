@@ -2,7 +2,7 @@
 #ifndef _LORAWAN_HANDLER_
 #define _LORAWAN_HANDLER_
 #include <Arduino.h>
-#include "Storage.h"
+#include "StorageInterface.h"
 #include "LoRaWan-Arduino.h"  //http://librarymanager/All#SX126x
 #include <stdio.h>
 #include "MeterInterface.h"

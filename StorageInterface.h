@@ -8,16 +8,8 @@
 #ifndef _STORAGE_HANDLER_
 #define _STORAGE_HANDLER_
 
-#include <Arduino.h>
 #include "config.h"
-extern "C" {
-#include <hardware/flash.h>
-};
-
-#define STRING_MAX_SIZE 16
-#define HEADER_LENGTH 3
-#define STORAGE_SIZE 2 + STRING_MAX_SIZE + (STRING_MAX_SIZE * CODES_LIMIT)
-#define STORAGE_FLASH_OFFSET PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE  // last sector in flash
+#include "StorageImplementation.h"
 
 const unsigned long MINUTE_IN_MS = 1000 * 60;
 typedef char CodeString[STRING_MAX_SIZE];
@@ -36,11 +28,10 @@ enum Downlink_Operation {
   REBOOT,
 };
 
-bool readFromStorage();
-bool writeToStorage();
+bool tryReadStoredConfig(void);
+bool tryWriteStoredConfig(void);
 bool processDownlinkPacket(byte* buffer, byte bufLen);
 void printSummary();
-bool dataHasChanged();
-void loadDefaultValues();
+void loadDefaultConfig();
 
 #endif

@@ -2,7 +2,6 @@ extern "C" {
 #include "hardware/watchdog.h"
 }
 #include <Arduino.h>
-#include "Storage.h"
 #include "LoRaWAN_Handler.h"
 #include "MeterInterface.h"
 #include "mbed.h"
@@ -71,7 +70,7 @@ void setup() {
   watchdogTimer.attach(ISR_WatchdogRefresh, (std::chrono::microseconds)(TIMER_ISR_PERIOD_MS * 1000));
 
   // Read config from flash
-  if (!readFromStorage()) {
+  if (!tryReadStoredConfig()) {
     Serial.println("Failed to read data config from flash!");
     while (1)
       ;
@@ -119,16 +118,13 @@ void loop() {
           break;
         }
       case 'w':
-        writeToStorage();
-        break;
-      case 'q':
-        Serial.printf("Result: %d\r\n", dataHasChanged());
+        tryWriteStoredConfig();
         break;
       case 'b':
         getVBatInt();
         break;
       case 'l':
-        loadDefaultValues();
+        loadDefaultConfig();
         break;
       case 'r':
         Serial.println("Reboot requested...");

@@ -1,7 +1,7 @@
 #ifndef _METER_HANDLER_
 #define _METER_HANDLER_
 
-#include "Storage.h"
+#include "StorageInterface.h"
 #include "LoRaWAN_Handler.h"
 #include "IEC62056-21_Parser.h"
 #include <ArduinoRS485.h>  //Click here to get the library: http://librarymanager/All#ArduinoRS485

@@ -2,8 +2,8 @@
 #include "IEC62056-21_Parser.h"
 
 bool isQueriedCode(char* code, int* codeIndex) {
-  for (int i = 0; i < CODES_LIMIT && codes[i] != NULL; i++) {
-    if (strcmp(code, codes[i]) == 0) {
+  for (int i = 0; i < CODES_LIMIT && loadedCodes[i] != NULL; i++) {
+    if (strcmp(code, loadedCodes[i]) == 0) {
       *(codeIndex) = i;
       return true;
     }

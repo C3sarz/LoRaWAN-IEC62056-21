@@ -1,7 +1,7 @@
 #ifndef _PARSER_
 #define _PARSER_
 
-#include "Storage.h"
+#include "StorageInterface.h"
 #include <string.h>
 
 class ParsedDataObject {
@@ -17,7 +17,7 @@ public:
   }
 };
 
-extern CodeString codes[CODES_LIMIT + 1];
+extern CodeString loadedCodes[CODES_LIMIT + 1];
 
 bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr);
 bool parseDataBlockOld(char buffer[], int len, ParsedDataObject* dataPtr);
