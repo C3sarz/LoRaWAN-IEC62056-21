@@ -21,6 +21,7 @@ extern "C" {
 
 const unsigned long MINUTE_IN_MS = 1000 * 60;
 typedef char CodeString[STRING_MAX_SIZE];
+extern const char* defaultCodes[];
 
 // Globals
 extern volatile uint linkCheckCount;

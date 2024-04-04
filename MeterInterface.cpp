@@ -32,6 +32,7 @@ bool changeBaud(int newBaudIndex) {
   currentBaudIndex = newBaudIndex;
   int newBaud = ClassCMeterBaudRates[newBaudIndex];
   RS485.noReceive();
+  RS485.flush();
   RS485.end();
   RS485.begin(newBaud, RS485_SERIAL_CONFIG);
   RS485.setTimeout(RS485_TIMEOUT);
@@ -77,6 +78,7 @@ bool isHandshakeResponse(int* newBaud) {
   if (isDigit(idPtr[4])) {
     result = idPtr[4] - '0';
     if (result <= 6 && result >= 0) {
+      *newBaud = result;
       baudFound = true;
     }
   }

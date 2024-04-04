@@ -70,8 +70,8 @@ bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
   while (nextItem != NULL) {
     nextItem[0] = '\0';
     count++;
-    Serial.printf("-------------------\r\nLine: %s\r\n", currentItem);
-    if(parseDataString(currentItem,strlen(currentItem),dataPtr)){
+    if (parseDataString(currentItem, strlen(currentItem), dataPtr)) {
+      Serial.printf("-------------------\r\nLine: %s\r\n", currentItem);
       foundCount++;
     }
 
@@ -79,9 +79,11 @@ bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
     nextItem = strchr(nextItem + 1, '\n');
   }
   // DEBUG
-  Serial.printf("Finished parsing %u lines.\r\n", count);
-  for (int i = 0; i < CODES_LIMIT; i++) {
-    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, dataPtr->values[i], dataPtr->decimalPoints[i]);
+  if (foundCount > 0) {
+    Serial.printf("Finished parsing %u lines.\r\n", count);
+    for (int i = 0; i < CODES_LIMIT; i++) {
+      Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, dataPtr->values[i], dataPtr->decimalPoints[i]);
+    }
   }
 
   return foundCount > 0;

@@ -20,26 +20,6 @@ int currentBaudIndex = DEFAULT_BAUD_INDEX;
 /// Loaded OBIS codes
 CodeString codes[CODES_LIMIT + 1];
 
-
-const char* defaultCodes[] = {
-  "128.8.11",
-  "128.8.21",
-  "128.8.31",
-  "128.8.13",
-  "128.8.23",
-  "128.8.33",
-  "32.7.0",
-  "52.7.0",
-  "72.7.0",
-  "15.7.0",
-  "15.5.0",
-  "15.8.0",
-  "15.6.0",
-  "13.5.0",
-  "15.8.0*02",
-  ""
-};
-
 /*
   Load default device parameters (saved as constants in code).
 */
