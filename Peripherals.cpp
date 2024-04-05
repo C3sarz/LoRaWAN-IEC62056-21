@@ -49,7 +49,7 @@ uint16_t getVBatInt(void) {
 //   byte value = 0;
 //   if(vbat >= 3800)
 //     value = 90;
-  
+
 //   else if(vbat >= 3750)
 //   value = 80;
 

@@ -1,8 +1,8 @@
 #ifndef _PARSER_
 #define _PARSER_
 
-#include "StorageInterface.h"
 #include <string.h>
+#include "config.h"
 
 class ParsedDataObject {
 public:
@@ -19,8 +19,7 @@ public:
 
 extern CodeString loadedCodes[CODES_LIMIT + 1];
 
-bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr);
-bool parseDataBlockOld(char buffer[], int len, ParsedDataObject* dataPtr);
+bool parseDataBlock(byte buffer[], int len, ParsedDataObject* dataPtr);
 bool parseDataString(char dataStr[], int len, ParsedDataObject* dataPtr);
 bool isQueriedCode(char* code, int* codeIndex);
 void saveNumericalValue(char* valueStr, int position, ParsedDataObject* dataPtr);

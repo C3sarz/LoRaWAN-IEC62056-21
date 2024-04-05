@@ -18,7 +18,6 @@ bool parseDataString(char dataStr[], int len, ParsedDataObject* dataPtr) {
   char* dataStartPtr;
   char* dataBlockEndPtr;
 
-  Serial.printf("-------------------\r\nLine: %s\r\n", dataStr);
   idStringPtr = strchr(dataStr, ':');
   dataStartPtr = strchr(dataStr, '(');
   dataBlockEndPtr = strchr(dataStr, ')');
@@ -40,9 +39,11 @@ bool parseDataString(char dataStr[], int len, ParsedDataObject* dataPtr) {
 
   int valueIndex;
   if (isQueriedCode(idStringPtr, &valueIndex)) {
-    Serial.println("================== CODE FOUND ===================");
+#if LOGLEVEL >= 1
+    Serial.println("================== CODE ===================");
     Serial.printf("Code: %s\r\n", idStringPtr);
     Serial.printf("Data: %s\r\n", dataStartPtr);
+#endif
     saveNumericalValue(dataStartPtr, valueIndex, dataPtr);
     return true;
   }
@@ -50,11 +51,11 @@ bool parseDataString(char dataStr[], int len, ParsedDataObject* dataPtr) {
 }
 
 // Parses the IEC 62056-21 data block DESTRUCTIVELY, and saves relevant values if found.
-bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
+bool parseDataBlock(byte buffer[], int len, ParsedDataObject* dataPtr) {
 
   // String processing pointers
   char* nextItem;
-  char* currentItem = buffer;
+  char* currentItem = (char*)buffer;
 
   // Counters
   unsigned int count = 0;
@@ -71,7 +72,9 @@ bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
     nextItem[0] = '\0';
     count++;
     if (parseDataString(currentItem, strlen(currentItem), dataPtr)) {
+#if LOGLEVEL >= 2
       Serial.printf("-------------------\r\nLine: %s\r\n", currentItem);
+#endif
       foundCount++;
     }
 
@@ -87,73 +90,6 @@ bool parseDataBlockNew(char buffer[], int len, ParsedDataObject* dataPtr) {
   }
 
   return foundCount > 0;
-}
-
-// Parses the IEC 62056-21 data block DESTRUCTIVELY, and saves relevant values if found.
-bool parseDataBlockOld(char buffer[], int len, ParsedDataObject* dataPtr) {
-  unsigned int count = 0;
-
-  // String processing pointers
-  char* nextItem;
-  char* currentItem = buffer;
-  char* idStringPtr;
-  char* dataStartPtr;
-  char* dataBlockEndPtr;
-
-  nextItem = strchr(buffer, '\n');
-  if (nextItem == NULL) {
-    return false;
-  }
-
-  while (nextItem != NULL) {
-    nextItem[0] = '\0';
-    count++;
-    Serial.printf("-------------------\r\nLine: %s\r\n", currentItem);
-    idStringPtr = strchr(currentItem, ':');
-    dataStartPtr = strchr(currentItem, '(');
-    dataBlockEndPtr = strchr(currentItem, ')');
-    if (idStringPtr == NULL || dataStartPtr == NULL) {
-      return false;
-    }
-
-    // Check for units separator (value*units)
-    char* valueEndPtr = strchr(dataStartPtr, '*');
-    if (valueEndPtr != NULL) {
-      dataBlockEndPtr = valueEndPtr;
-    }
-
-    // Modify string
-    dataStartPtr[0] = '\0';
-    dataBlockEndPtr[0] = '\0';
-    idStringPtr++;
-    dataStartPtr++;
-
-    int valueIndex;
-    if (isQueriedCode(idStringPtr, &valueIndex)) {
-      Serial.println("================== CODE FOUND ===================");
-      Serial.printf("Code: %s\r\n", idStringPtr);
-      Serial.printf("Data: %s\r\n", dataStartPtr);
-      saveNumericalValue(dataStartPtr, valueIndex, dataPtr);
-    }
-
-    currentItem = nextItem + 1;
-    nextItem = strchr(nextItem + 1, '\n');
-  }
-  // DEBUG
-  Serial.printf("Finished parsing %u lines.\r\n", count);
-  for (int i = 0; i < CODES_LIMIT; i++) {
-    Serial.printf("CHANNEL #%d: %d, Decimals: %u\r\n", i + 1, dataPtr->values[i], dataPtr->decimalPoints[i]);
-  }
-
-
-  // No codes found
-  if (dataPtr->itemPresentMask <= 0) {
-    Serial.println("No codes found!");
-    return false;
-  }
-
-  // Data saved in saveNumericalValue and returned through the packet pointer.
-  return true;
 }
 
 uint16_t getPositionMask(int position) {

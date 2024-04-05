@@ -4,7 +4,6 @@
 #include "StorageInterface.h"
 #include "LoRaWAN_Handler.h"
 #include "IEC62056-21_Parser.h"
-#include <ArduinoRS485.h>  //Click here to get the library: http://librarymanager/All#ArduinoRS485
 #include <string.h>
 
 #define RS485_TX_PIN 0
@@ -29,7 +28,7 @@ const int ClassCMeterBaudRates[]{
 
 // Data packet type
 enum Packet_Type {
-  INIT =0x0A,
+  INIT = 0x0A,
   STATUS,
   ERROR,
   DATA,
@@ -42,12 +41,14 @@ enum Error_Type {
 extern int currentBaudIndex;
 
 void initMeterInterface();
+size_t readRS485(byte* buffer, size_t bufferLen);
+size_t writeRS485(byte* buffer, size_t bufferLen);
 void processRS485();
 byte assembleDataPacket(byte* resultBuffer, ParsedDataObject data);
 byte assembleStatusPacket(byte* resultBuffer, ParsedDataObject data);
 byte assembleErrorPacket(Error_Type error, byte* dataPtr);
 byte assembleInitPacket(byte* dataPtr);
-bool changeBaud(int newBaudIndex);
+bool changeBaudRS485(int newBaudIndex);
 void sendAck(int baudIndex);
 void sendQuery(const char address[]);
 bool isHandshakeResponse(int* newBaud);

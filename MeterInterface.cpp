@@ -1,21 +1,23 @@
+#include <cstring>
+#include <cstddef>
+#include <sys/_types.h>
 #include "MeterInterface.h"
 
-char dataBuf[UART_BUFFER_SIZE];
+byte dataBuf[UART_BUFFER_SIZE];
 const char REQUESTSTART[] = "/?";
 const char REQUESTEND[] = "!\r\n";
 
 // Set up RS485 interface
-void initMeterInterface() {
+void initMeterInterface(void) {
+
   pinMode(WB_IO2, OUTPUT);
   digitalWrite(WB_IO2, HIGH);
-  RS485.setPins(RS485_TX_PIN, RS485_DE_PIN, RS485_RE_PIN);
-  RS485.setTimeout(RS485_TIMEOUT);
-  RS485.begin(ClassCMeterBaudRates[currentBaudIndex], RS485_SERIAL_CONFIG);
-  RS485.receive();
+  Serial1.setTimeout(RS485_TIMEOUT);
+  Serial1.begin(ClassCMeterBaudRates[currentBaudIndex], RS485_SERIAL_CONFIG);
 }
 
 // Change RS485 baud rate
-bool changeBaud(int newBaudIndex) {
+bool changeBaudRS485(int newBaudIndex) {
   // Invalid baud
   if (!(newBaudIndex <= 6 && newBaudIndex >= 0)) {
     Serial.printf("Invalid baud index: %c.\r\n", newBaudIndex);
@@ -31,33 +33,49 @@ bool changeBaud(int newBaudIndex) {
   // Set up new baud rate
   currentBaudIndex = newBaudIndex;
   int newBaud = ClassCMeterBaudRates[newBaudIndex];
-  RS485.noReceive();
-  RS485.flush();
-  RS485.end();
-  RS485.begin(newBaud, RS485_SERIAL_CONFIG);
-  RS485.setTimeout(RS485_TIMEOUT);
-  RS485.receive();
-  Serial.printf("Baud %d\r\n", newBaud);
+  digitalWrite(WB_IO2, LOW);
+  Serial1.flush();
+  Serial1.end();
+  Serial1.begin(newBaud, RS485_SERIAL_CONFIG);
+  Serial1.setTimeout(RS485_TIMEOUT);
+  digitalWrite(WB_IO2, HIGH);
+  delay(100);
+#if LOGLEVEL >= 2
+  Serial.printf("New Baud %d\r\n", newBaud);
+#endif
   return true;
+}
+
+size_t writeRS485(byte* buffer, size_t bufferLen) {
+  return Serial1.write(buffer, bufferLen);
+}
+
+size_t readRS485(byte* buffer, size_t bufferLen) {
+  // Check if RS485 data in buffer
+  if (Serial1.available() > 0) {
+    return Serial1.readBytesUntil('!', buffer, bufferLen);
+  }
+  return 0;
 }
 
 // Send ACK to meter to begin data transfer
 void sendAck(int baudIndex) {
   char baudChar = '0' + static_cast<char>(baudIndex);
-  char ackBuf[] = { 0x06, '0', baudChar, '0', 0x0D, 0x0A, '\0' };
-  RS485.beginTransmission();
-  RS485.write(ackBuf, strlen(ackBuf));
-  RS485.endTransmission();
+  byte ackBuf[] = { 0x06, '0', baudChar, '0', 0x0D, 0x0A, '\0' };
+  writeRS485(ackBuf, sizeof(ackBuf));
+#if LOGLEVEL >= 2
   Serial.printf("Sent ack: %s for baud class %c.\r\n", ackBuf, baudChar);
+#endif
 }
 
 // Initiate communication with a meter with a handshake
 void sendQuery(const char address[]) {
-  RS485.beginTransmission();
-  RS485.write(REQUESTSTART, strlen(REQUESTSTART));
-  RS485.write(address, strlen(address));
-  RS485.write(REQUESTEND, strlen(REQUESTEND));
-  RS485.endTransmission();
+  // Assemble TX buffer
+  unsigned int sentBytes = 0;
+  sentBytes += writeRS485((byte*)REQUESTSTART, strlen(REQUESTSTART));
+  sentBytes += writeRS485((byte*)address, strlen(address));
+  sentBytes += writeRS485((byte*)REQUESTEND, strlen(REQUESTEND));
+
   Serial.printf("Sent data: %s%s%s \r\n", REQUESTSTART, address, REQUESTEND);
 }
 
@@ -65,7 +83,7 @@ void sendQuery(const char address[]) {
 bool isHandshakeResponse(int* newBaud) {
   // Struct: /ISk5\2MT382-1000
   ///         ISk5ME172-0000
-  char* idPtr = strchr(dataBuf, '/');
+  char* idPtr = strchr((char*)dataBuf, '/');
   int result;
   bool baudFound = false;
 
@@ -89,17 +107,18 @@ bool isHandshakeResponse(int* newBaud) {
 void processRS485() {
   static unsigned int statusCounter = 0;
   ParsedDataObject dataObj;
-  int availableBytes = RS485.available();
+  int availableBytes = readRS485(dataBuf, sizeof(dataBuf));
 
   // Check if RS485 in buffer
   if (availableBytes) {
-    unsigned int dataLen = 0;
-    dataLen = RS485.readBytesUntil('!', dataBuf, sizeof(dataBuf));
+    unsigned int dataLen = availableBytes;
     dataBuf[dataLen] = '\0';
+#if LOGLEVEL >= 2
     for (unsigned int i = 0; i < dataLen; i++) {
       Serial.printf("%c", dataBuf[i]);
     }
-    Serial.printf("Bytes read: %u\r\n", dataLen);
+    Serial.printf("\r\n=======\r\nBytes read: %u\r\n", dataLen);
+#endif
 
     // Check for HANDSHAKE RESPONSE
     int newBaud = DEFAULT_BAUD_INDEX;
@@ -109,10 +128,8 @@ void processRS485() {
       if (NEGOTIATE_BAUD) {
         Serial.printf("Will ACK for baud %d\r\n", ClassCMeterBaudRates[newBaud]);
         sendAck(newBaud);
-
-        // Message gets corrupted without the delay
         delay(100);
-        changeBaud(newBaud);
+        changeBaudRS485(newBaud);
       }
 
       // ACK and keep original baud
@@ -122,7 +139,7 @@ void processRS485() {
     }
 
     // Try parse IEC-62056-21 ASCII data
-    else if (parseDataBlockNew(dataBuf, sizeof(dataBuf), &dataObj)) {
+    else if (parseDataBlock(dataBuf, sizeof(dataBuf), &dataObj)) {
 
       // Assemble and send LoRaWAN packet
       byte sendBuf[LORAWAN_APP_DATA_BUFF_SIZE];
@@ -147,9 +164,10 @@ void processRS485() {
         Serial.printf("Error sending packet. E:%d, pktlen: %u\r\n", sendError, packetLen);
       }
     } else {
+#if LOGLEVEL >= 2
       Serial.println("Error parsing the data recieved.");
+#endif
     }
-    RS485.flush();
   }
 }
 

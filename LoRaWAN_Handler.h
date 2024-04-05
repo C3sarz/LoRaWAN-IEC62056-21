@@ -9,8 +9,8 @@
 #include "Peripherals.h"
 
 #define SCHED_MAX_EVENT_DATA_SIZE APP_TIMER_SCHED_EVENT_DATA_SIZE /**< Maximum size of scheduler events. */
-#define SCHED_QUEUE_SIZE 60 /**< Maximum number of events in the scheduler queue. */
-#define LORAWAN_TX_POWER TX_POWER_0 /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
+#define SCHED_QUEUE_SIZE 60                                       /**< Maximum number of events in the scheduler queue. */
+#define LORAWAN_TX_POWER TX_POWER_0                               /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3
 #define RANDOM_TIME_MAX 10000
 

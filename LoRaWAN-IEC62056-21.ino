@@ -137,7 +137,7 @@ void loop() {
   else if ((millis() - lastRequest) > periodResult) {
     if (lmh_join_status_get() == LMH_SET) {
 
-      changeBaud(DEFAULT_BAUD_INDEX);
+      changeBaudRS485(DEFAULT_BAUD_INDEX);
       delay(50);
       sendQuery(deviceAddress);
     } else {

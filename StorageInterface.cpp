@@ -54,7 +54,7 @@ bool tryWriteStoredConfig(void) {
 // Read saved settings from nonvolatile storage
 bool tryReadStoredConfig(void) {
   StoredConfig config;
-  if(IReadStoredValues(&config)){
+  if (IReadStoredValues(&config)) {
     byte uplinkMinutes = config.uplinkMinutes;
     uplinkPeriod = uplinkMinutes * MINUTE_IN_MS;
     currentBaudIndex = config.baudIndex;
@@ -91,7 +91,7 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
 
   // Change RS485 baud speed (index class C)
   else if (opcode == CHANGE_SERIAL_BAUD && parameter < 7) {
-    if (changeBaud(parameter)) {
+    if (changeBaudRS485(parameter)) {
       Serial.printf("Baud changed to %u", parameter);
       currentBaudIndex = parameter;
     }
@@ -102,8 +102,8 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
   else if (opcode == UPDATE_CODE && parameter < CODES_LIMIT) {
     if (dataLen > 0
         && dataLen < (STRING_MAX_SIZE)
-        && (bufLen >= HEADER_LENGTH + dataLen)) {
-      memcpy(codes[parameter], buffer + HEADER_LENGTH, dataLen);
+        && (bufLen >= 2 + dataLen)) {
+      memcpy(loadedCodes[parameter], buffer + 2, dataLen);
       loadedCodes[parameter][dataLen] = '\0';
       return true;
     }
@@ -113,8 +113,8 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
   else if (opcode == CHANGE_DEVICE_ADDR) {
     if (dataLen > 0
         && dataLen < (STRING_MAX_SIZE)
-        && (bufLen >= HEADER_LENGTH + dataLen)) {
-      memcpy(deviceAddress, buffer + HEADER_LENGTH, dataLen);
+        && (bufLen >= 2 + dataLen)) {
+      memcpy(deviceAddress, buffer + 2, dataLen);
       deviceAddress[dataLen] = '\0';
       return true;
     }
@@ -122,7 +122,7 @@ bool processDownlinkPacket(byte* buffer, byte bufLen) {
 
   // Save device properties to nonvolatile storage
   else if (opcode == SAVE_CHANGES) {
-    return writeToStorage();
+    return tryWriteStoredConfig();
   }
 
   // Reboot command
