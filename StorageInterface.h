@@ -31,7 +31,7 @@ enum Downlink_Operation {
 bool tryReadStoredConfig(void);
 bool tryWriteStoredConfig(void);
 bool processDownlinkPacket(byte* buffer, byte bufLen);
-void printSummary();
-void loadDefaultConfig();
+void printSummary(void);
+void loadDefaultConfig(void);
 
 #endif

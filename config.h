@@ -14,10 +14,11 @@
 #define DEFAULT_BAUD_INDEX 0
 
 // LoRa & LoRaWAN config
-#define ADR_MODE LORAWAN_ADR_OFF
-#define CHANNEL_MASK 2                 /* Channels 8-15, (Milesight default) */
+#define ADR_MODE 0
+#define LORAWAN_SUBCHANNEL 2                 /* Channels 8-15, (Milesight default) */
 #define LORAWAN_APP_DATA_BUFF_SIZE 100 /**< buffer size of the data to be transmitted. */
-#define LORAWAN_DATARATE DR_3          /*LoRaMac datarates definition, from DR_0 to DR_5*/
+#define LORAWAN_DATARATE 3          /*LoRaMac datarates definition, from DR_0 to DR_5*/
+#define RANDOM_TIME_DEVIATION_MAX 10000
 
 extern uint8_t nodeDeviceEUI[8];
 extern uint8_t nodeAppEUI[8];

@@ -1,6 +1,4 @@
 #include <cstring>
-#include <cstddef>
-#include <sys/_types.h>
 #include "MeterInterface.h"
 
 byte dataBuf[UART_BUFFER_SIZE];
@@ -70,6 +68,10 @@ void sendAck(int baudIndex) {
 
 // Initiate communication with a meter with a handshake
 void sendQuery(const char address[]) {
+
+  // Set baud to default
+  changeBaudRS485(DEFAULT_BAUD_INDEX);
+
   // Assemble TX buffer
   unsigned int sentBytes = 0;
   sentBytes += writeRS485((byte*)REQUESTSTART, strlen(REQUESTSTART));
@@ -152,7 +154,7 @@ void processRS485() {
       }
 
       // Send packet
-      int sendError = send_lora_frame(sendBuf, packetLen, linkCheckCount >= CONFIRMED_COUNT);
+      byte sendError = sendUplink(sendBuf, packetLen, linkCheckCount >= CONFIRMED_COUNT);
       if (packetLen && !sendError) {
         digitalWrite(PIN_LED1, 0);
         Serial.println("Packet sent successfully!");
@@ -248,31 +250,6 @@ void processRS485() {
 //     }
 //   }
 // }
-
-// Assemble packet that is sent when the device joins the network.
-byte assembleInitPacket(byte* dataPtr) {
-  byte dataLen = 0;
-  dataPtr[dataLen++] = INIT;
-
-  uint16_t vBat = getVBatInt();
-  dataPtr[dataLen++] = static_cast<byte>((vBat & 0xFF00) >> 8);
-  dataPtr[dataLen++] = static_cast<byte>(vBat & 0x00FF);
-
-  return dataLen;
-}
-
-// Assemble packet that is sent when we get an error.
-byte assembleErrorPacket(Error_Type error, byte* dataPtr) {
-  byte dataLen = 0;
-  dataPtr[dataLen++] = ERROR;
-
-  uint16_t vBat = getVBatInt();
-  dataPtr[dataLen++] = static_cast<byte>((vBat & 0xFF00) >> 8);
-  dataPtr[dataLen++] = static_cast<byte>(vBat & 0x00FF);
-  dataPtr[dataLen++] = error;
-
-  return dataLen;
-}
 
 // Assemble status packet that is sent every few data packets.
 byte assembleStatusPacket(byte* resultBuffer, ParsedDataObject data) {

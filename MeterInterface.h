@@ -2,8 +2,9 @@
 #define _METER_HANDLER_
 
 #include "StorageInterface.h"
-#include "LoRaWAN_Handler.h"
+#include "LoRaWAN_Interface.h"
 #include "IEC62056-21_Parser.h"
+#include "Peripherals.h"
 #include <string.h>
 
 #define RS485_TX_PIN 0
@@ -24,14 +25,6 @@ const int ClassCMeterBaudRates[]{
   4800,
   9600,
   19200
-};
-
-// Data packet type
-enum Packet_Type {
-  INIT = 0x0A,
-  STATUS,
-  ERROR,
-  DATA,
 };
 
 enum Error_Type {

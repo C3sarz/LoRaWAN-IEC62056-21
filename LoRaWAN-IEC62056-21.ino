@@ -2,10 +2,11 @@ extern "C" {
 #include "hardware/watchdog.h"
 }
 #include <Arduino.h>
-#include "LoRaWAN_Handler.h"
+#include "Peripherals.h"
 #include "MeterInterface.h"
 #include "mbed.h"
 #include "rtos.h"
+#include "LoRaWAN_Interface.h"
 
 // Uplink Parameters
 extern char deviceAddress[];
@@ -78,16 +79,16 @@ void setup() {
 
   // Start RS485 and LoRa interfaces
   initMeterInterface();
-  setupLoRaWAN();
+  initLoRaWAN();
 
   // Set random seed from analog voltage in A0.
   analogReadResolution(12);
   randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
 
   // Print summary and init
-  Serial.println("\r\n==========================\r\nInit successful");
   Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
-  periodResult = uplinkPeriod + random(0, RANDOM_TIME_MAX);
+  periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
+  Serial.println("\r\n==========================\r\nInit successful");
   // printSummary();
 }
 
@@ -108,13 +109,13 @@ void loop() {
       case 't':
         {
           byte pkt[] = { 0x00 };
-          send_lora_frame(pkt, sizeof(pkt), true);
+          sendUplink(pkt, sizeof(pkt), true);
           break;
         }
       case 'u':
         {
           byte pkt[] = { 98, 175, 221, 187, 147, 238, 76, 207, 29, 232, 168, 222, 140, 145, 242, 57, 62, 58, 168, 174, 143, 140, 51, 250, 16, 11, 143, 202, 22, 141, 37, 46, 242, 229, 158, 255, 251, 154, 222, 18, 24, 155, 67, 55, 249, 194, 246, 18, 25, 183, 143, 50, 39, 194, 253, 177, 216, 142, 64, 76, 185, 130, 124, 77 };
-          send_lora_frame(pkt, sizeof(pkt), false);
+          sendUplink(pkt, sizeof(pkt), false);
           break;
         }
       case 'w':
@@ -135,15 +136,10 @@ void loop() {
 
   // Periodical request
   else if ((millis() - lastRequest) > periodResult) {
-    if (lmh_join_status_get() == LMH_SET) {
-
-      changeBaudRS485(DEFAULT_BAUD_INDEX);
       delay(50);
       sendQuery(deviceAddress);
-    } else {
-      Serial.println("Device has not joined network yet, cancel request...");
-    }
-    periodResult = uplinkPeriod + random(0, RANDOM_TIME_MAX);
+    
+    periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
     lastRequest = millis();
   }
 }
