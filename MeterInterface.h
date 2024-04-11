@@ -27,8 +27,9 @@ const int ClassCMeterBaudRates[]{
   19200
 };
 
-enum Error_Type {
-  TIMEOUT,
+enum Meter_Error_Type {
+  QUERY_TIMEOUT = 1,
+  ERROR_UNSPECIFIED,
 };
 
 extern int currentBaudIndex;
@@ -39,8 +40,6 @@ size_t writeRS485(byte* buffer, size_t bufferLen);
 void processRS485();
 byte assembleDataPacket(byte* resultBuffer, ParsedDataObject data);
 byte assembleStatusPacket(byte* resultBuffer, ParsedDataObject data);
-byte assembleErrorPacket(Error_Type error, byte* dataPtr);
-byte assembleInitPacket(byte* dataPtr);
 bool changeBaudRS485(int newBaudIndex);
 void sendAck(int baudIndex);
 void sendQuery(const char address[]);

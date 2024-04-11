@@ -1,11 +1,6 @@
-extern "C" {
-#include "hardware/watchdog.h"
-}
 #include <Arduino.h>
 #include "Peripherals.h"
 #include "MeterInterface.h"
-#include "mbed.h"
-#include "rtos.h"
 #include "LoRaWAN_Interface.h"
 
 // Uplink Parameters
@@ -16,45 +11,13 @@ unsigned long periodResult;
 
 // Watchdog and reset variables
 volatile bool setReboot = false;
-mbed::Ticker watchdogTimer;
-const unsigned long TIMER_ISR_PERIOD_MS = 1000;
 
 // Link check variables
 volatile uint linkCheckCount = 30;
 
-//==================================================================
-//==================================================================
-//==================================================================
-//==================================================================
-
-void ISR_WatchdogRefresh(void) {
-  static bool toggle = false;
-
-  ///////////////////////////////////////////////////////////
-
-  if (!setReboot) {
-    watchdog_update();
-    digitalWrite(LED_BUILTIN, toggle);
-  }
-  toggle = !toggle;
-  watchdogTimer.attach(ISR_WatchdogRefresh, (std::chrono::microseconds)(TIMER_ISR_PERIOD_MS * 1000));
-
-  ////////////////////////////////////////////////////////////
-}
-
-//==================================================================
-//==================================================================
-//==================================================================
-//==================================================================
-
 void setup() {
 
-  // LED Setup
-  pinMode(PIN_LED1, OUTPUT);
-  pinMode(PIN_LED2, OUTPUT);
-  digitalWrite(PIN_LED1, 1);
-  digitalWrite(PIN_LED2, 1);
-
+  setupPeripherals();
   // Initialize Serial for debug output
   time_t timeout = millis();
   Serial.begin(115200);
@@ -65,10 +28,6 @@ void setup() {
       break;
     }
   }
-
-  // Watchdog Init
-  watchdog_enable(5000, false);
-  watchdogTimer.attach(ISR_WatchdogRefresh, (std::chrono::microseconds)(TIMER_ISR_PERIOD_MS * 1000));
 
   // Read config from flash
   if (!tryReadStoredConfig()) {
@@ -81,11 +40,8 @@ void setup() {
   initMeterInterface();
   initLoRaWAN();
 
-  // Set random seed from analog voltage in A0.
-  analogReadResolution(12);
-  randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
-
   // Print summary and init
+  randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
   Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
   Serial.println("\r\n==========================\r\nInit successful");
@@ -136,9 +92,10 @@ void loop() {
 
   // Periodical request
   else if ((millis() - lastRequest) > periodResult) {
-      delay(50);
-      sendQuery(deviceAddress);
-    
+    delay(50);
+    beepBuzzer();
+    sendQuery(deviceAddress);
+
     periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
     lastRequest = millis();
   }

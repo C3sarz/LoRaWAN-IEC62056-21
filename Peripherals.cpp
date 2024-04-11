@@ -1,8 +1,75 @@
-#include <sys/_stdint.h>
 #include "Peripherals.h"
+#include "config.h"
+extern "C" {
+#include "hardware/watchdog.h"
+}
+#include "mbed.h"
+#include "rtos.h"
 
-
+#define VBATFILTERSIZE 50
+#define PIN_VBAT WB_A0
+#define VBAT_MV_PER_LSB (0.806F)    // 3.0V ADC range and 12 - bit ADC resolution = 3300mV / 4096
+#define VBAT_DIVIDER (0.6F)         // 1.5M + 1M voltage divider on VBAT = (1.5M / (1M + 1.5M))
+#define VBAT_DIVIDER_COMP (1.846F)  //  // Compensation factor for the VBAT divider
+#define REAL_VBAT_MV_PER_LSB (VBAT_DIVIDER_COMP * VBAT_MV_PER_LSB)
+#define BUZZER_CONTROL WB_IO2
 const uint32_t vbat_pin = PIN_VBAT;
+const unsigned long TIMER_ISR_PERIOD_MS = 1000;
+
+
+//==================================================================
+//==================================================================
+//==================================================================
+//==================================================================
+
+mbed::Ticker watchdogTimer;
+void ISR_WatchdogRefresh(void) {
+  static bool toggle = false;
+
+  ///////////////////////////////////////////////////////////
+
+  if (!setReboot) {
+    watchdog_update();
+    digitalWrite(LED_BUILTIN, toggle);
+  }
+  toggle = !toggle;
+  watchdogTimer.attach(ISR_WatchdogRefresh, (std::chrono::microseconds)(TIMER_ISR_PERIOD_MS * 1000));
+
+  ////////////////////////////////////////////////////////////
+}
+
+//==================================================================
+//==================================================================
+//==================================================================
+//==================================================================
+
+
+bool setupPeripherals(void) {
+  analogReadResolution(12);
+
+  // LED Setup
+  pinMode(PIN_LED1, OUTPUT);
+  pinMode(PIN_LED2, OUTPUT);
+  pinMode(BUZZER_CONTROL, OUTPUT);
+  digitalWrite(PIN_LED1, 1);
+  digitalWrite(PIN_LED2, 1);
+  tone(BUZZER_CONTROL, 500);
+  delay(100);
+  noTone(BUZZER_CONTROL);
+
+
+  // Watchdog Init
+  watchdog_enable(5000, false);
+  watchdogTimer.attach(ISR_WatchdogRefresh, (std::chrono::microseconds)(TIMER_ISR_PERIOD_MS * 1000));
+
+  return true;
+}
+
+void beepBuzzer(void) {
+  tone(BUZZER_CONTROL, 500);
+  delay(300);
+  noTone(BUZZER_CONTROL);
+}
 
 /**
  * @brief Get RAW Battery Voltage, from RAK WIRELESS
@@ -37,6 +104,9 @@ float readVBatFloat(void) {
 }
 
 uint16_t getVBatInt(void) {
+  if (!BATTERY_INSTALLED) {
+    return 0;
+  }
   float voltage = readVBatFloat();
   uint16_t voltageInt = static_cast<uint16_t>(voltage);
   voltageInt -= 100;  //offset

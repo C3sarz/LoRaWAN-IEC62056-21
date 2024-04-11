@@ -5,7 +5,7 @@
 #define LORAWAN_TX_POWER TX_POWER_0 /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3
 
-DeviceClass_t g_CurrentClass = CLASS_A;                 /* class definition*/
+DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
 LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
 lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
 uint8_t gAppPort = 1;                                   /* data port*/
@@ -26,7 +26,7 @@ static lmh_param_t g_lora_param_init = { ADR_MODE, LORAWAN_DATARATE, LORAWAN_PUB
 /**@brief Structure containing LoRaWan callback functions, needed for lmh_init()
 */
 static lmh_callback_t g_lora_callbacks = {
-  lorawan_get_battery_level,
+  BATTERY_INSTALLED ? lorawan_get_battery_level : NULL,
   BoardGetUniqueId,
   BoardGetRandomSeed,
   lorawan_rx_handler,
@@ -157,17 +157,17 @@ LoRaWAN_Send_Status ISendLoRaWAN(byte* sendBuffer, size_t bufferLen, bool confir
       break;
     case LMH_ERROR:
       count_fail++;
-      Serial.printf("lmh_send fail, Error:%d, fail count %d\n", error, count_fail);
+      // Serial.printf("lmh_send fail, Error:%d, fail count %d\n", error, count_fail);
       result = SEND_FAILED_GENERIC;
       break;
     case LMH_BUSY:
       count_fail++;
-      Serial.printf("lmh_send busy, Error:%d, fail count %d\n", error, count_fail);
+      // Serial.printf("lmh_send busy, Error:%d, fail count %d\n", error, count_fail);
       result = SEND_FAILED_BUSY;
       break;
     default:
       count_fail++;
-      Serial.printf("lmh_send unknown error, Error:%d, fail count %d\n", error, count_fail);
+      // Serial.printf("lmh_send unknown error, Error:%d, fail count %d\n", error, count_fail);
       result = SEND_FAILED_GENERIC;
       break;
   }

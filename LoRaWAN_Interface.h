@@ -24,9 +24,9 @@ void onJoinFailedCallback(void);
 void onUnconfirmedSentCallback(void);
 void onConfirmedSentCallback(bool result);
 void onDownlinkRecievedCallback(byte* recievedData, unsigned int dataLen, byte fPort, int rssi, byte snr);
-byte sendUplink(byte* sendBuffer, size_t bufferLen, bool confirmed);
-byte assembleErrorPacket(byte error, byte* dataPtr);
-byte assembleInitPacket(byte* dataPtr) ;
+int sendUplink(byte* sendBuffer, size_t bufferLen, bool confirmed);
+byte assembleErrorPacket(byte error, byte parameters, byte* dataPtr);
+byte assembleInitPacket(byte* dataPtr);
 
 
 

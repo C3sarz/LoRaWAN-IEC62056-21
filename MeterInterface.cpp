@@ -5,9 +5,10 @@ byte dataBuf[UART_BUFFER_SIZE];
 const char REQUESTSTART[] = "/?";
 const char REQUESTEND[] = "!\r\n";
 
+byte queryAttempts = 4;
+
 // Set up RS485 interface
 void initMeterInterface(void) {
-
   pinMode(WB_IO2, OUTPUT);
   digitalWrite(WB_IO2, HIGH);
   Serial1.setTimeout(RS485_TIMEOUT);
@@ -24,7 +25,7 @@ bool changeBaudRS485(int newBaudIndex) {
 
   // No change
   if (newBaudIndex == currentBaudIndex) {
-    Serial.println("No change in baud");
+    // Serial.println("No change in baud");
     return false;
   }
 
@@ -69,6 +70,13 @@ void sendAck(int baudIndex) {
 // Initiate communication with a meter with a handshake
 void sendQuery(const char address[]) {
 
+  if (queryAttempts >= MAX_QUERY_ATTEMPTS) {
+    byte packet[10];
+    byte packetLen = assembleErrorPacket(QUERY_TIMEOUT, queryAttempts, packet);
+    queryAttempts = 0;
+    sendUplink(packet, packetLen, true);
+  }
+
   // Set baud to default
   changeBaudRS485(DEFAULT_BAUD_INDEX);
 
@@ -77,8 +85,8 @@ void sendQuery(const char address[]) {
   sentBytes += writeRS485((byte*)REQUESTSTART, strlen(REQUESTSTART));
   sentBytes += writeRS485((byte*)address, strlen(address));
   sentBytes += writeRS485((byte*)REQUESTEND, strlen(REQUESTEND));
-
-  Serial.printf("Sent data: %s%s%s \r\n", REQUESTSTART, address, REQUESTEND);
+  queryAttempts++;
+  Serial.printf("Send query #%u: %s%s%s \r\n", queryAttempts, REQUESTSTART, address, REQUESTEND);
 }
 
 // Check if recieved packet is the handshake response and act upon result
@@ -172,84 +180,6 @@ void processRS485() {
     }
   }
 }
-
-// Process incoming RS485 transmissions in main loop
-// void processRS485old() {
-//   static unsigned int statusCounter = 0;
-//   int availableBytes = RS485.available();
-
-//   if (availableBytes) {
-//     unsigned int dataLen = 0;
-
-//     // Handshake was successful and now we expect a data packet
-//     if (expectData) {
-//       ParsedDataObject dataObj;
-//       dataLen = RS485.readBytesUntil('!', dataBuf, sizeof(dataBuf));
-//       dataBuf[dataLen] = '\0';
-//       for (unsigned int i = 0; i < dataLen; i++) {
-//         Serial.printf("%c", dataBuf[i]);
-//       }
-//       Serial.printf("Bytes read: %u\r\n", dataLen);
-
-//       // Parse IEC-62056-21 ASCII data
-//       if (parseDataBlockNew(dataBuf, sizeof(dataBuf), &dataObj)) {
-
-//         // Assemble and send LoRaWAN packet
-//         byte sendBuf[LORAWAN_APP_DATA_BUFF_SIZE];
-
-//         int result = 0;
-//         if (++statusCounter >= STATUSPACKETCOUNT) {
-//           statusCounter = 0;
-//           result = assembleStatusPacket(sendBuf, dataObj);
-//         } else {
-
-//           result = assembleDataPacket(sendBuf, dataObj);
-//         }
-
-
-//         int sendError = -1;
-//         if (linkCheckCount >= CONFIRMED_COUNT) {
-//           sendError = send_lora_frame(sendBuf, result, true);
-//         } else {
-//           sendError = send_lora_frame(sendBuf, result, false);
-//         }
-
-//         if (result && !sendError) {
-//           digitalWrite(PIN_LED1, 0);
-//           Serial.println("Packet sent successfully!");
-//           Serial.printf("Packet size: %u\r\n", result);
-//           for (int i = 0; i < result; i++) {
-//             Serial.printf("0x%02hhx ", sendBuf[i]);
-//           }
-//         } else {
-//           Serial.printf("Error sending packet. E:%d, pktlen: %u\r\n", sendError, result);
-//         }
-//       } else {
-//         Serial.println("Error parsing the data recieved.");
-//       }
-//       RS485.flush();
-//       expectData = false;
-//     }
-
-//     // Not expecting data, probably expecting the handshake response
-//     else {
-//       // dataLen = RS485.readBytesUntil(0x0D, dataBuf, sizeof(dataBuf));
-//       dataLen = RS485.readBytes(dataBuf, sizeof(dataBuf));
-
-//       dataBuf[dataLen] = '\0';
-//       for (unsigned int i = 0; i < dataLen; i++) {
-//         Serial.printf("%c", dataBuf[i]);
-//       }
-//       Serial.printf("Bytes read: %u\r\n", dataLen);
-//       if (isHandshakeResponse()) {
-//         expectData = true;
-//         RS485.flush();
-//       } else {
-//         expectData = false;
-//       }
-//     }
-//   }
-// }
 
 // Assemble status packet that is sent every few data packets.
 byte assembleStatusPacket(byte* resultBuffer, ParsedDataObject data) {

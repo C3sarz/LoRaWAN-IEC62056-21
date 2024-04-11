@@ -3,7 +3,7 @@
 #include "StorageInterface.h"
 #include "Peripherals.h"
 
-static LoRaWAN_Callbacks callbacks ={
+static LoRaWAN_Callbacks callbacks = {
   onJoinConfirmedCallback,
   onJoinFailedCallback,
   onUnconfirmedSentCallback,
@@ -11,17 +11,25 @@ static LoRaWAN_Callbacks callbacks ={
   onDownlinkRecievedCallback,
 };
 
+bool Joined_Network = false;
+volatile bool tx_busy = false;
+
 void onDownlinkRecievedCallback(byte* recievedData, unsigned int dataLen, byte fPort, int rssi, byte snr) {
 
-Serial.printf("DL at FPort %u: RSSI: %d | SNR: %f \r\n",fPort, rssi, snr);
-if (processDownlinkPacket(recievedData, dataLen)) {
+  Serial.printf("DL at FPort %u: RSSI: %d | SNR: %f \r\n", fPort, rssi, snr);
+  if (processDownlinkPacket(recievedData, dataLen)) {
     Serial.println("Downlink processing succcessful");
   } else {
     Serial.println("Unknown or invalid downlink command");
   }
 }
 
-byte sendUplink(byte* sendBuffer, size_t bufferLen, bool confirmed) {
+int sendUplink(byte* sendBuffer, size_t bufferLen, bool confirmed) {
+  if (!Joined_Network) {
+    return 1;
+  } else if (tx_busy) {
+    return -1;
+  }
   return ISendLoRaWAN(sendBuffer, bufferLen, confirmed);
 }
 
@@ -39,19 +47,23 @@ void tryJoin(void) {
 }
 
 void onJoinConfirmedCallback(void) {
+  Serial.println("OTAA Mode, Network Joined!");
+  beepBuzzer();
+  beepBuzzer();
+  digitalWrite(PIN_LED2, 0);
+  delay(10000);
+  Joined_Network = true;
 
-    Serial.println("OTAA Mode, Network Joined!");
-    digitalWrite(PIN_LED2, 0);
-      delay(10000);
-      byte data[10];
-      byte len = assembleInitPacket(data);
-      ISendLoRaWAN(data, len, false);
+  // Send init uplink
+  byte data[10];
+  byte len = assembleInitPacket(data);
+  sendUplink(data, len, false);
 }
 
 void onJoinFailedCallback(void) {
   static byte failCount = 0;
   Serial.println("OTAA join failed!");
-  if(failCount++  > 10){
+  if (failCount++ > 10) {
     setReboot = true;
   }
   delay(30000);
@@ -89,7 +101,7 @@ byte assembleInitPacket(byte* dataPtr) {
 }
 
 // Assemble packet that is sent when we get an error.
-byte assembleErrorPacket(byte error, byte* dataPtr) {
+byte assembleErrorPacket(byte error, byte parameters, byte* dataPtr) {
   byte dataLen = 0;
   dataPtr[dataLen++] = ERROR;
 
@@ -97,6 +109,7 @@ byte assembleErrorPacket(byte error, byte* dataPtr) {
   dataPtr[dataLen++] = static_cast<byte>((vBat & 0xFF00) >> 8);
   dataPtr[dataLen++] = static_cast<byte>(vBat & 0x00FF);
   dataPtr[dataLen++] = error;
+  dataPtr[dataLen++] = parameters;
 
   return dataLen;
 }

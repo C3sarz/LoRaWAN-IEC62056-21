@@ -1,11 +1,13 @@
 #ifndef _CONFIG_
 #define _CONFIG_
 #include <Arduino.h>
+#pragma GCC poison malloc
 
 // System config
-#define BATTERY_INSTALLED 1
+#define BATTERY_INSTALLED 0
 #define CONFIRMED_COUNT 30
 #define LOGLEVEL 1
+#define MAX_QUERY_ATTEMPTS 5
 
 // Storage config
 #define INITIAL_PERIOD_MINUTES 1
@@ -14,10 +16,11 @@
 #define DEFAULT_BAUD_INDEX 0
 
 // LoRa & LoRaWAN config
+#define LORAWAN_DEVICE_CLASS 2
 #define ADR_MODE 0
-#define LORAWAN_SUBCHANNEL 2                 /* Channels 8-15, (Milesight default) */
+#define LORAWAN_SUBCHANNEL 2           /* Channels 8-15, (Milesight default) */
 #define LORAWAN_APP_DATA_BUFF_SIZE 100 /**< buffer size of the data to be transmitted. */
-#define LORAWAN_DATARATE 3          /*LoRaMac datarates definition, from DR_0 to DR_5*/
+#define LORAWAN_DATARATE 3
 #define RANDOM_TIME_DEVIATION_MAX 10000
 
 extern uint8_t nodeDeviceEUI[8];
