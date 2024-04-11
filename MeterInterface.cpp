@@ -165,6 +165,7 @@ void processRS485() {
       byte sendError = sendUplink(sendBuf, packetLen, linkCheckCount >= CONFIRMED_COUNT);
       if (packetLen && !sendError) {
         digitalWrite(PIN_LED1, 0);
+        queryAttempts = 0;
         Serial.println("Packet sent successfully!");
         Serial.printf("Packet size: %u\r\n", packetLen);
         for (int i = 0; i < packetLen; i++) {
