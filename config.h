@@ -7,7 +7,7 @@
 #define BATTERY_INSTALLED 0
 #define CONFIRMED_COUNT 30
 #define LOGLEVEL 1
-#define MAX_QUERY_ATTEMPTS 5
+#define MAX_QUERY_ATTEMPTS 3
 
 // Storage config
 #define INITIAL_PERIOD_MINUTES 1

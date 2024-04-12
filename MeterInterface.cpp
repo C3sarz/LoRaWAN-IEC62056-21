@@ -4,8 +4,7 @@
 byte dataBuf[UART_BUFFER_SIZE];
 const char REQUESTSTART[] = "/?";
 const char REQUESTEND[] = "!\r\n";
-
-byte queryAttempts = 4;
+byte queryAttempts = MAX_QUERY_ATTEMPTS - 1;
 
 // Set up RS485 interface
 void initMeterInterface(void) {

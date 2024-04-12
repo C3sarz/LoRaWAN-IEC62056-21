@@ -16,7 +16,7 @@ volatile bool setReboot = false;
 volatile uint linkCheckCount = 30;
 
 void setup() {
-
+  delay(2000);
   setupPeripherals();
   // Initialize Serial for debug output
   time_t timeout = millis();
@@ -44,8 +44,7 @@ void setup() {
   randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
   Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
-  Serial.println("\r\n==========================\r\nInit successful");
-  // printSummary();
+  Serial.println("==========================\r\nInit successful");
 }
 
 void loop() {
@@ -93,7 +92,7 @@ void loop() {
   // Periodical request
   else if ((millis() - lastRequest) > periodResult) {
     delay(50);
-    beepBuzzer();
+    // beepBuzzer();
     sendQuery(deviceAddress);
 
     periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
