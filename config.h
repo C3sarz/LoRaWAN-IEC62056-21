@@ -6,7 +6,7 @@
 // System config
 #define BATTERY_INSTALLED 0
 #define CONFIRMED_COUNT 30
-#define LOGLEVEL 1
+#define LOGLEVEL 2
 #define MAX_QUERY_ATTEMPTS 3
 
 // Storage config

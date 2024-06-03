@@ -1,4 +1,3 @@
-#include <cstring>
 #include "MeterInterface.h"
 
 byte dataBuf[UART_BUFFER_SIZE];
@@ -8,7 +7,14 @@ byte queryAttempts = MAX_QUERY_ATTEMPTS - 1;
 
 // Set up RS485 interface
 void initMeterInterface(void) {
+
+  // Setup RS485 pins
+  pinMode(RS485_DE_PIN, OUTPUT);
+  pinMode(RS485_RE_PIN, OUTPUT);
+
   pinMode(WB_IO2, OUTPUT);
+  digitalWrite(RS485_RE_PIN, HIGH);
+  digitalWrite(RS485_DE_PIN, LOW);
   digitalWrite(WB_IO2, HIGH);
   Serial1.setTimeout(RS485_TIMEOUT);
   Serial1.begin(ClassCMeterBaudRates[currentBaudIndex], RS485_SERIAL_CONFIG);
@@ -32,11 +38,13 @@ bool changeBaudRS485(int newBaudIndex) {
   currentBaudIndex = newBaudIndex;
   int newBaud = ClassCMeterBaudRates[newBaudIndex];
   digitalWrite(WB_IO2, LOW);
+  digitalWrite(RS485_RE_PIN, LOW);
   Serial1.flush();
   Serial1.end();
   Serial1.begin(newBaud, RS485_SERIAL_CONFIG);
   Serial1.setTimeout(RS485_TIMEOUT);
   digitalWrite(WB_IO2, HIGH);
+  digitalWrite(RS485_RE_PIN, HIGH);
   delay(100);
 #if LOGLEVEL >= 2
   Serial.printf("New Baud %d\r\n", newBaud);
@@ -45,7 +53,11 @@ bool changeBaudRS485(int newBaudIndex) {
 }
 
 size_t writeRS485(byte* buffer, size_t bufferLen) {
-  return Serial1.write(buffer, bufferLen);
+  size_t result = 0;
+  digitalWrite(RS485_DE_PIN, HIGH);
+  result = Serial1.write(buffer, bufferLen);
+  digitalWrite(RS485_DE_PIN, LOW);
+  return result;
 }
 
 size_t readRS485(byte* buffer, size_t bufferLen) {
@@ -174,7 +186,7 @@ void processRS485() {
         Serial.printf("Error sending packet. E:%d, pktlen: %u\r\n", sendError, packetLen);
       }
     } else {
-#if LOGLEVEL >= 2
+#if LOGLEVEL >= 0
       Serial.println("Error parsing the data recieved.");
 #endif
     }
