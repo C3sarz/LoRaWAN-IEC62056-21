@@ -3,6 +3,9 @@
 #include "MeterInterface.h"
 #include "LoRaWAN_Interface.h"
 
+// Globals
+extern char * fw_version;
+
 // Uplink Parameters
 extern char deviceAddress[];
 extern unsigned long uplinkPeriod;
@@ -44,7 +47,9 @@ void setup() {
   randomSeed(analogRead(WB_A0));  // Pseudorandom seed from VBAT;
   Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
-  Serial.println("==========================\r\nInit successful");
+  Serial.println("==========\r\nInit successful");
+  Serial.printf("Firmware v%s\r\n",fw_version);
+  Serial.println("==========");
 }
 
 void loop() {
