@@ -19,8 +19,9 @@ volatile bool setReboot = false;
 volatile uint linkCheckCount = 30;
 
 void setup() {
-  delay(2000);
+  // delay(100);
   setupPeripherals();
+  delay(1000);
   // Initialize Serial for debug output
   time_t timeout = millis();
   Serial.begin(115200);

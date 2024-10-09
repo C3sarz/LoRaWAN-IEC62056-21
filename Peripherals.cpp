@@ -1,3 +1,4 @@
+#include "pins_arduino.h"
 #include "Peripherals.h"
 #include "config.h"
 extern "C" {
@@ -12,9 +13,9 @@ extern "C" {
 #define VBAT_DIVIDER (0.6F)         // 1.5M + 1M voltage divider on VBAT = (1.5M / (1M + 1.5M))
 #define VBAT_DIVIDER_COMP (1.846F)  //  // Compensation factor for the VBAT divider
 #define REAL_VBAT_MV_PER_LSB (VBAT_DIVIDER_COMP * VBAT_MV_PER_LSB)
-#define BUZZER_CONTROL WB_IO2
+#define WATCHDOG_PIN WB_IO1
 const uint32_t vbat_pin = PIN_VBAT;
-const unsigned long TIMER_ISR_PERIOD_MS = 1000;
+const unsigned long TIMER_ISR_PERIOD_MS = 100;
 
 
 //==================================================================
@@ -24,12 +25,13 @@ const unsigned long TIMER_ISR_PERIOD_MS = 1000;
 
 mbed::Ticker watchdogTimer;
 void ISR_WatchdogRefresh(void) {
-  static bool toggle = false;
+  volatile static bool toggle = false;
 
   ///////////////////////////////////////////////////////////
 
   if (!setReboot) {
     watchdog_update();
+    digitalWrite(WATCHDOG_PIN, toggle);
     digitalWrite(LED_BUILTIN, toggle);
   }
   toggle = !toggle;
@@ -45,30 +47,29 @@ void ISR_WatchdogRefresh(void) {
 
 
 bool setupPeripherals(void) {
-  analogReadResolution(12);
 
   // LED Setup
   pinMode(PIN_LED1, OUTPUT);
   pinMode(PIN_LED2, OUTPUT);
-  pinMode(BUZZER_CONTROL, OUTPUT);
+  // pinMode(BUZZER_CONTROL, OUTPUT);
+  pinMode(WATCHDOG_PIN, OUTPUT);
   digitalWrite(PIN_LED1, 1);
   digitalWrite(PIN_LED2, 1);
-  tone(BUZZER_CONTROL, 500);
-  delay(100);
-  noTone(BUZZER_CONTROL);
-
+  digitalWrite(WATCHDOG_PIN, 0);
+  // delay(1000);
+  analogReadResolution(12);
 
   // Watchdog Init
-  watchdog_enable(5000, false);
+  watchdog_enable(2000, false);
   watchdogTimer.attach(ISR_WatchdogRefresh, (std::chrono::microseconds)(TIMER_ISR_PERIOD_MS * 1000));
 
   return true;
 }
 
 void beepBuzzer(void) {
-  tone(BUZZER_CONTROL, 500);
-  delay(300);
-  noTone(BUZZER_CONTROL);
+  // tone(BUZZER_CONTROL, 500);
+  // delay(300);
+  // noTone(BUZZER_CONTROL);
 }
 
 /**
