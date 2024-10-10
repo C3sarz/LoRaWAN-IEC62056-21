@@ -13,6 +13,7 @@ static LoRaWAN_Callbacks callbacks = {
 
 bool Joined_Network = false;
 volatile bool tx_busy = false;
+extern const uint16_t fw_version;
 
 void onDownlinkRecievedCallback(byte* recievedData, unsigned int dataLen, byte fPort, int rssi, byte snr) {
 
@@ -66,7 +67,7 @@ void onJoinFailedCallback(void) {
   if (failCount++ > 10) {
     setReboot = true;
   }
-  delay(30000);
+  delay(60000);
   tryJoin();
 }
 
@@ -93,9 +94,12 @@ byte assembleInitPacket(byte* dataPtr) {
   byte dataLen = 0;
   dataPtr[dataLen++] = INIT;
 
-  uint16_t vBat = getVBatInt();
-  dataPtr[dataLen++] = static_cast<byte>((vBat & 0xFF00) >> 8);
-  dataPtr[dataLen++] = static_cast<byte>(vBat & 0x00FF);
+  // Send version number as first packet.
+  dataPtr[dataLen++] = static_cast<byte>((fw_version & 0xFF00) >> 8);
+  dataPtr[dataLen++] = static_cast<byte>(fw_version & 0x00FF);
+  // uint16_t vBat = getVBatInt();
+  // dataPtr[dataLen++] = static_cast<byte>((vBat & 0xFF00) >> 8);
+  // dataPtr[dataLen++] = static_cast<byte>(vBat & 0x00FF);
 
   return dataLen;
 }
@@ -112,4 +116,9 @@ byte assembleErrorPacket(byte error, byte parameters, byte* dataPtr) {
   dataPtr[dataLen++] = parameters;
 
   return dataLen;
+}
+
+
+byte getADRDatarate(void){
+  return getCurrentDatarate();
 }

@@ -103,7 +103,7 @@ void sendQuery(const char address[]) {
 // Check if recieved packet is the handshake response and act upon result
 bool isHandshakeResponse(int* newBaud) {
   // Struct: /ISk5\2MT382-1000
-  ///         ISk5ME172-0000
+  //         ISk5ME172-0000
   char* idPtr = strchr((char*)dataBuf, '/');
   int result;
   bool baudFound = false;
@@ -171,6 +171,8 @@ void processRS485() {
       } else {
         packetLen = assembleDataPacket(sendBuf, dataObj);
       }
+
+      Serial.printf("Current DR: %u\r\n",getADRDatarate());
 
       // Send packet
       byte sendError = sendUplink(sendBuf, packetLen, linkCheckCount >= CONFIRMED_COUNT);

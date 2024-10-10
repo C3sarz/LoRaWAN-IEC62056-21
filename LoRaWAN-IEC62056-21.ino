@@ -4,7 +4,7 @@
 #include "LoRaWAN_Interface.h"
 
 // Globals
-extern char * fw_version;
+extern const uint16_t fw_version;
 
 // Uplink Parameters
 extern char deviceAddress[];
@@ -17,6 +17,17 @@ volatile bool setReboot = false;
 
 // Link check variables
 volatile uint linkCheckCount = 30;
+
+
+void printFWInfo(){
+  Serial.printf("Firmware v%.2f\r\n",((float)fw_version)/100);
+  Serial.print("DevUID: [ ");
+  for(int i = 0; i< sizeof(nodeDeviceEUI); i++){
+    Serial.printf("0x%02hhX ", nodeDeviceEUI[i]);
+  }
+  Serial.println("]");
+}
+
 
 void setup() {
   // delay(100);
@@ -49,7 +60,7 @@ void setup() {
   Serial.printf("Seed: %u\r\n", analogRead(WB_A0));
   periodResult = uplinkPeriod + random(0, RANDOM_TIME_DEVIATION_MAX);
   Serial.println("==========\r\nInit successful");
-  Serial.printf("Firmware v%s\r\n",fw_version);
+  printFWInfo();
   Serial.println("==========");
 }
 
@@ -66,6 +77,8 @@ void loop() {
         break;
       case 'd':
         printSummary();
+        printFWInfo();
+        Serial.printf("Current DR: %u\r\n",getADRDatarate());
         break;
       case 't':
         {

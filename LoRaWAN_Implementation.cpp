@@ -1,14 +1,16 @@
 #include "LoRaWAN_Implementation.h"
 #include <stdio.h>
 #include "LoRaWan-Arduino.h"  //http://librarymanager/All#SX126x
+#include "config.h"
 
 #define LORAWAN_TX_POWER TX_POWER_0 /*LoRaMac tx power definition, from TX_POWER_0 to TX_POWER_15*/
 #define JOINREQ_NBTRIALS 3
 
 DeviceClass_t g_CurrentClass = CLASS_C;                 /* class definition*/
-LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
+// LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_US915; /* Region:US915*/
 lmh_confirm g_CurrentConfirm = LMH_UNCONFIRMED_MSG;     /* confirm/unconfirm packet definition*/
 uint8_t gAppPort = 1;                                   /* data port*/
+extern const LoRaMacParams_t LoRaMacParams;
 
 uint8_t lorawan_get_battery_level(void);
 void lorawan_has_joined_handler(void);
@@ -20,7 +22,7 @@ void lorawan_conf_finished(bool result);
 
 /**@brief Structure containing LoRaWan parameters, needed for lmh_init()
 */
-static lmh_param_t g_lora_param_init = { ADR_MODE, LORAWAN_DATARATE, LORAWAN_PUBLIC_NETWORK, JOINREQ_NBTRIALS, LORAWAN_TX_POWER, LORAWAN_DUTYCYCLE_OFF };
+static lmh_param_t g_lora_param_init = { ADR_MODE, DEFAULT_DATARATE, LORAWAN_PUBLIC_NETWORK, JOINREQ_NBTRIALS, LORAWAN_TX_POWER, LORAWAN_DUTYCYCLE_OFF };
 
 
 /**@brief Structure containing LoRaWan callback functions, needed for lmh_init()
@@ -44,9 +46,24 @@ static lmh_app_data_t m_lora_app_data = { m_lora_app_data_buffer, 0, 0, 0, 0 }; 
 
 static uint32_t count = 0;
 static uint32_t count_fail = 0;
+byte currentDR = DEFAULT_DATARATE;
 
 // LoRaWAN Hardware and Software setup
 bool ISetupLoRaWAN(LoRaWAN_Callbacks* newCallbacksPtr) {
+
+// Region selection from config
+LoRaMacRegion_t g_CurrentRegion = LORAMAC_REGION_AU915; /* Default Region:AU915*/
+  switch(FREQUENCY_REGION){
+    case REGIONS_AU915:
+      g_CurrentRegion = LORAMAC_REGION_AU915;
+      break;
+      case REGIONS_US915:
+      g_CurrentRegion = LORAMAC_REGION_US915;
+      break;
+      default:
+      g_CurrentRegion = LORAMAC_REGION_AU915;
+      break;
+  }
 
   // Simple RAK11300 Setup
   lora_rak11300_init();
@@ -172,4 +189,9 @@ LoRaWAN_Send_Status ISendLoRaWAN(byte* sendBuffer, size_t bufferLen, bool confir
       break;
   }
   return result;
+}
+
+byte getCurrentDatarate(void){
+  byte dr = static_cast<byte>(LoRaMacParams.ChannelsDatarate);
+  return dr;
 }
